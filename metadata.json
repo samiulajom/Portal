@@ -1,0 +1,6 @@
+{
+  "name": "ScaleUp Operations Portal",
+  "description": "Comprehensive agency operations dashboard for ScaleUp featuring Issue Sheet, Update Sheet, Shift Stations & Roster, Complaints, Queue Requests, and Store Directory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

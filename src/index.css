@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+@layer base {
+  /* Default dark scheme styles */
+  :root {
+    color-scheme: dark;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
+/* ========================================================================= */
+/* COMPREHENSIVE LIGHT MODE SUPPORT (লাইভ লাইট ও ডার্ক মোড সাপোর্ট)               */
+/* ========================================================================= */
+html.light,
+html.light body,
+html.light #root {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Primary surface & cards in Light mode */
+html.light aside,
+html.light header,
+html.light main,
+html.light [class*="bg-[#080b0f]"],
+html.light [class*="bg-[#090b0e]"],
+html.light [class*="bg-[#0a0c10]"],
+html.light [class*="bg-[#0a0d12]"],
+html.light [class*="bg-[#0b0e13]"],
+html.light [class*="bg-[#0b0e14]"],
+html.light [class*="bg-[#0c0f14]"],
+html.light [class*="bg-[#0c1017]"],
+html.light [class*="bg-[#0d1017]"],
+html.light [class*="bg-[#0e1218]"],
+html.light [class*="bg-[#0e1219]"],
+html.light [class*="bg-[#0e121a]"],
+html.light [class*="bg-[#0f1217]"],
+html.light [class*="bg-[#0f131a]"],
+html.light [class*="bg-[#0f131b]"],
+html.light [class*="bg-[#0f131c]"],
+html.light [class*="bg-[#10141d]"],
+html.light [class*="bg-[#11141c]"],
+html.light [class*="bg-[#111620]"],
+html.light [class*="bg-[#111622]"],
+html.light [class*="bg-[#12161f]"],
+html.light [class*="bg-[#121620]"],
+html.light [class*="bg-[#13171e]"],
+html.light [class*="bg-[#141822]"],
+html.light [class*="bg-[#141924]"],
+html.light [class*="bg-[#151922]"],
+html.light [class*="bg-[#161b24]"],
+html.light [class*="bg-[#181d26]"] {
+  background-color: #ffffff !important;
+}
+
+/* Subtle shaded surfaces & nested cards in Light mode */
+html.light [class*="bg-[#151a24]"],
+html.light [class*="bg-[#161c28]"],
+html.light [class*="bg-[#18202c]"],
+html.light [class*="bg-[#18202d]"],
+html.light [class*="bg-[#182232]"],
+html.light [class*="bg-[#192231]"],
+html.light [class*="bg-[#1a212c]"],
+html.light [class*="bg-[#1b212d]"],
+html.light [class*="bg-[#1c222b]"],
+html.light [class*="bg-[#1e1c12]"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* Borders in Light mode */
+html.light [class*="border-[#171d27]"],
+html.light [class*="border-[#18202d]"],
+html.light [class*="border-[#1b212c]"],
+html.light [class*="border-[#1b222d]"],
+html.light [class*="border-[#1b222f]"],
+html.light [class*="border-[#1c222b]"],
+html.light [class*="border-[#1c2433]"],
+html.light [class*="border-[#1d2535]"],
+html.light [class*="border-[#1e2531]"],
+html.light [class*="border-[#1e2533]"],
+html.light [class*="border-[#1e2736]"],
+html.light [class*="border-[#1e2738]"],
+html.light [class*="border-[#1f2633]"],
+html.light [class*="border-[#212937]"],
+html.light [class*="border-[#212b3c]"],
+html.light [class*="border-[#222a38]"],
+html.light [class*="border-[#232c3d]"],
+html.light [class*="border-[#242e3f]"],
+html.light [class*="border-[#242e42]"],
+html.light [class*="border-[#25364d]"],
+html.light [class*="border-[#273244]"],
+html.light [class*="border-[#273447]"],
+html.light [class*="border-[#27354d]"],
+html.light [class*="border-[#293448]"],
+html.light [class*="border-[#2b3544]"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Primary text in Light mode */
+html.light [class*="text-white"],
+html.light h1.text-white,
+html.light h2.text-white,
+html.light h3.text-white,
+html.light h4.text-white {
+  color: #0f172a !important;
+}
+
+/* Secondary & subdued text in Light mode */
+html.light [class*="text-neutral-200"],
+html.light [class*="text-neutral-300"],
+html.light [class*="text-[#e2e8f0]"] {
+  color: #334155 !important;
+}
+
+html.light [class*="text-neutral-400"] {
+  color: #475569 !important;
+}
+
+html.light [class*="text-[#94a3b8]"],
+html.light [class*="text-[#8592a6]"] {
+  color: #64748b !important;
+}
+
+/* Inputs, textareas, selects in Light mode */
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: #d97706 !important;
+  box-shadow: 0 0 0 1px #d97706 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Table header & hover in Light mode */
+html.light thead tr {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+}
+
+html.light tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+html.light tbody tr {
+  border-color: #f1f5f9 !important;
+}
+
+/* Modal backdrop in Light mode */
+html.light .fixed.inset-0.bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Button contrast in Light mode */
+html.light button.bg-white,
+html.light .bg-white.text-black {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+html.light button.bg-white:hover,
+html.light .bg-white.text-black:hover {
+  background-color: #1e293b !important;
+}
+
+/* Subtle card shadow in Light mode */
+html.light aside,
+html.light header,
+html.light .border,
+html.light .rounded-xl,
+html.light .rounded-2xl {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+}
