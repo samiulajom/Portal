@@ -172,6 +172,22 @@ export const initialIssues: IssueItem[] = [
 
 export const initialUpdates: UpdateEntry[] = [
   {
+    id: 'upd-0',
+    date: '06 Oct, 2026 02:40 PM',
+    profile: 'ecom_store3_Fiverr',
+    clientName: 'christinaslo',
+    orderId: 'FO2E10297142',
+    attachments: '',
+    updateBy: '@msifat17088',
+    message: 'est',
+    commentOperation: '',
+    commentSales: '',
+    tlCheck: false,
+    tlAt: '@Sushmoy',
+    updateTo: 'Inbox Page Update',
+    doneBy: 'Samiul'
+  },
+  {
     id: 'upd-1',
     date: '06 Oct, 2026 12:28 PM',
     profile: 'web_mania_Fiverr',
@@ -260,14 +276,27 @@ export const initialUpdates: UpdateEntry[] = [
     date: '04 Oct, 2026 08:41 PM',
     profile: 'smmtech_Fiverr',
     clientName: 'likeike',
-    updateBy: '@Sakib - CMS',
-    message: 'Delivered initial 10 social media carousel graphics with branded typography guidelines.',
+    orderId: 'FO414FF46F0C2',
+    updateBy: 'Sakib Sarder',
+    message: `Hey there,
+
+I hope you're doing well and that this message finds you well.
+
+I was thinking about your website today, so I decided to rev-iew it again: https://jkgworldwide.com/
+
+While revie-wing the store, I noticed that there isn't currently a promotional popup. I believe adding a promotional popup with a discount offer, along with an em-ail marketing setup, could help increase your chances of improving sales and conversion rates.
+
+For example, we can offer a discount through the popup and collect visitors' em-ail addresses. Then, using Klaviyo, we can set up automated welcome em-ails and follow-up campaigns for those visitors.
+
+This can also help us re-engage customers who leave the store without completing a purchase, promote new product launches, share special offers, and maintain regular communication with your customers.
+
+If you like this approach, I'd be really happy to set up the complete promotional popup and Klaviyo em-ail marketing system for your store.`,
     commentOperation: 'Delivery Complete',
     commentSales: 'Client accepted delivery with 5-star rating.',
     tlCheck: true,
-    tlAt: '@Sakib - CMS',
+    tlAt: 'Sakib Sarder',
     updateTo: 'Inbox Page',
-    doneBy: 'Sakib'
+    doneBy: 'Sakib Sarder'
   }
 ];
 

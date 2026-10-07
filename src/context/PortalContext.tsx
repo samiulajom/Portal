@@ -53,6 +53,8 @@ interface PortalContextType {
   reopenIssue: (id: string) => void;
   
   updates: UpdateEntry[];
+  updateProfileFilter: string;
+  setUpdateProfileFilter: (profile: string) => void;
   addUpdate: (entry: Omit<UpdateEntry, 'id'>) => void;
   updateUpdate: (id: string, updated: Partial<UpdateEntry>) => void;
   deleteUpdate: (id: string) => void;
@@ -151,6 +153,8 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
     return initialUpdates;
   });
+
+  const [updateProfileFilter, setUpdateProfileFilter] = useState<string>('All');
 
   const [stations, setStations] = useState<StationGroup[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.STATIONS);
@@ -537,6 +541,8 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         completeIssue,
         reopenIssue,
         updates,
+        updateProfileFilter,
+        setUpdateProfileFilter,
         addUpdate,
         updateUpdate,
         deleteUpdate,

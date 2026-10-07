@@ -58,14 +58,19 @@ export interface UpdateEntry {
   date: string;
   profile: string;
   clientName: string;
+  orderId?: string;
+  attachments?: string;
   updateBy: string;
   message: string;
   commentOperation?: string;
   commentSales?: string;
   tlCheck: boolean;
   tlAt: string;
-  updateTo: 'Inbox Page' | 'Inbox & Order' | 'Order Page';
+  updateTo: 'Inbox Page' | 'Inbox & Order' | 'Order Page' | 'Inbox Page Update' | 'Order Page Update' | 'Inbox & Order Update' | 'Revision Update' | 'Query Update' | string;
   doneBy?: string;
+  status?: 'pending' | 'completed' | 'sent';
+  sentAt?: string;
+  sentBy?: string;
 }
 
 export type ShiftType = 'Morning Shift' | 'Evening Shift' | 'Night Shift';

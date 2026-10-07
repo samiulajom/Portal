@@ -10,7 +10,9 @@ import {
   Plus, 
   BarChart3,
   Calendar,
-  Sparkles
+  Sparkles,
+  Send,
+  MessageSquare
 } from 'lucide-react';
 import { usePortal } from '../../context/PortalContext';
 
@@ -35,6 +37,7 @@ export const OverviewView: React.FC = () => {
     handovers,
     setActiveTab,
     setIssueTeamFilter,
+    setUpdateProfileFilter,
     user
   } = usePortal();
 
@@ -67,9 +70,31 @@ export const OverviewView: React.FC = () => {
     });
   }, [issues]);
 
+  // UPDATE SHEET — Profile-wise breakdown
+  const profileUpdateBreakdown = useMemo(() => {
+    const allProfiles = Array.from(new Set(updates.map(u => u.profile))).filter(Boolean);
+    return allProfiles.map(profileName => {
+      const profileUpdates = updates.filter(u => u.profile === profileName);
+      const pending = profileUpdates.filter(u => u.status !== 'completed').length;
+      const done = profileUpdates.filter(u => u.status === 'completed').length;
+      const tlVerified = profileUpdates.filter(u => u.tlCheck).length;
+      const total = profileUpdates.length;
+      return { profile: profileName, pending, done, tlVerified, total };
+    }).sort((a, b) => b.pending - a.pending);
+  }, [updates]);
+
+  const totalUpdatesPending = useMemo(() => updates.filter(u => u.status !== 'completed').length, [updates]);
+  const totalUpdatesDone = useMemo(() => updates.filter(u => u.status === 'completed').length, [updates]);
+  const totalUpdatesTlVerified = useMemo(() => updates.filter(u => u.tlCheck).length, [updates]);
+
   const handleTeamClick = (teamName: string) => {
     setIssueTeamFilter(teamName);
     setActiveTab('issues');
+  };
+
+  const handleProfileUpdateClick = (profileName: string) => {
+    setUpdateProfileFilter(profileName);
+    setActiveTab('updates');
   };
 
   return (
@@ -239,6 +264,138 @@ export const OverviewView: React.FC = () => {
             );
           })}
         </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* UPDATE SHEET STATUS OVERVIEW — Profile-wise breakdown                      */}
+      {/* ========================================================================= */}
+      <div className="bg-[#0c0f14] border border-[#1b212c] rounded-xl p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1b212c] pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <Send className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Update Sheet Status Overview
+              </h3>
+              <p className="text-xs text-[#94a3b8]">
+                Profile-wise client message status — Pending to send vs Done/Sent breakdown.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Summary Stats Row */}
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/40 border border-amber-800/40 text-amber-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                {totalUpdatesPending} Pending
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-emerald-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                {totalUpdatesDone} Done
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#161b24] border border-[#1e2a3a] text-cyan-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                {totalUpdatesTlVerified} TL Verified
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setUpdateProfileFilter('All');
+                setActiveTab('updates');
+              }}
+              className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-medium transition-colors"
+            >
+              <span>Open Update Sheet</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {profileUpdateBreakdown.length === 0 ? (
+          <div className="text-center py-8 text-[#64748b] text-sm">
+            No update entries yet. Go to Update Sheet to add entries.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            {profileUpdateBreakdown.map(item => {
+              const sentPercent = item.total > 0 ? Math.round((item.done / item.total) * 100) : 0;
+              return (
+                <div
+                  key={item.profile}
+                  onClick={() => handleProfileUpdateClick(item.profile)}
+                  className="p-4 rounded-xl bg-[#11141c] hover:bg-[#161b24] border border-[#1d2535] hover:border-emerald-500/50 cursor-pointer transition-all space-y-3 group shadow-xs"
+                  title={`Click to view all updates for ${item.profile}`}
+                >
+                  {/* Profile Name & Total */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                      <span className="font-semibold text-white text-xs truncate group-hover:text-emerald-300 transition-colors font-mono">
+                        {item.profile}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#18202c] text-neutral-300 border border-[#273347]">
+                      {item.total} {item.total === 1 ? 'entry' : 'entries'}
+                    </span>
+                  </div>
+
+                  {/* 3 Status Counters */}
+                  <div className="grid grid-cols-3 gap-1.5 font-mono text-center">
+                    {/* Pending */}
+                    <div className="p-1.5 rounded-lg bg-[#1a1711] border border-amber-950/60">
+                      <span className="text-[10px] text-amber-400 block font-sans">Pending</span>
+                      <span className={`text-xs font-bold ${item.pending > 0 ? 'text-amber-400' : 'text-neutral-500'}`}>
+                        {item.pending}
+                      </span>
+                    </div>
+
+                    {/* Done/Sent */}
+                    <div className="p-1.5 rounded-lg bg-[#111a14] border border-emerald-950/60">
+                      <span className="text-[10px] text-emerald-400 block font-sans">Done</span>
+                      <span className={`text-xs font-bold ${item.done > 0 ? 'text-emerald-400' : 'text-neutral-500'}`}>
+                        {item.done}
+                      </span>
+                    </div>
+
+                    {/* TL Verified */}
+                    <div className="p-1.5 rounded-lg bg-[#0e1620] border border-cyan-950/60">
+                      <span className="text-[10px] text-cyan-400 block font-sans">TL ✓</span>
+                      <span className={`text-xs font-bold ${item.tlVerified > 0 ? 'text-cyan-400' : 'text-neutral-500'}`}>
+                        {item.tlVerified}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sent Progress Bar */}
+                  <div className="space-y-1 pt-0.5">
+                    <div className="flex items-center justify-between text-[10px] text-[#64748b]">
+                      <span>Messages sent</span>
+                      <span className="font-mono text-neutral-300">{sentPercent}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-[#1c2331] overflow-hidden flex">
+                      <div 
+                        className="bg-emerald-500 h-full transition-all duration-300" 
+                        style={{ width: `${sentPercent}%` }}
+                      />
+                      <div 
+                        className="bg-amber-500/60 h-full transition-all duration-300" 
+                        style={{ width: `${item.total > 0 ? (item.pending / item.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-[10px] text-[#64748b] group-hover:text-emerald-400 flex items-center justify-end gap-1 pt-1">
+                    <span>View entries</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Operations Highlights Grid */}
