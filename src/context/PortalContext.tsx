@@ -62,8 +62,11 @@ interface PortalContextType {
   
   stations: StationGroup[];
   addStation: (name: string, shift: StationGroup['shift']) => void;
-  addMemberToStation: (stationId: string, member: { name: string; initials: string; role?: string; phoneWhatsapp?: string }) => void;
+  addMemberToStation: (stationId: string, member: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }) => void;
   removeMemberFromStation: (stationId: string, memberId: string) => void;
+  deleteStation: (stationId: string) => void;
+  clearStationMembers: (stationId: string) => void;
+  clearAllStationsMembers: () => void;
   
   queues: QueueItem[];
   addQueue: (q: Omit<QueueItem, 'id' | 'queueKey' | 'createdAt'>) => void;
@@ -392,7 +395,7 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addMemberToStation = (
     stationId: string,
-    member: { name: string; initials: string; role?: string; phoneWhatsapp?: string }
+    member: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }
   ) => {
     const memId = `mem-${Date.now()}`;
     setStations(prev =>
@@ -420,6 +423,20 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return st;
       })
     );
+  };
+
+  const deleteStation = (stationId: string) => {
+    setStations(prev => prev.filter(st => st.id !== stationId));
+  };
+
+  const clearStationMembers = (stationId: string) => {
+    setStations(prev =>
+      prev.map(st => st.id === stationId ? { ...st, members: [] } : st)
+    );
+  };
+
+  const clearAllStationsMembers = () => {
+    setStations(prev => prev.map(st => ({ ...st, members: [] })));
   };
 
   // Queue handlers
@@ -551,6 +568,9 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         addStation,
         addMemberToStation,
         removeMemberFromStation,
+        deleteStation,
+        clearStationMembers,
+        clearAllStationsMembers,
         queues,
         addQueue,
         updateQueueStatus,

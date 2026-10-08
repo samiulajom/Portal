@@ -8,6 +8,17 @@ export type NavTab =
   | 'stores' 
   | 'handover';
 
+// Global Team Directory — members saved once, assigned to stations as needed
+export interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  phoneWhatsapp?: string;
+  role?: string;
+  profileNames?: string[];
+}
+
+
 export type IssueStatus = 'open' | 'in progress' | 'done';
 export type ServiceType = 'CMS' | 'Shopify' | 'Wix' | 'WordPress' | 'Webflow' | 'SquareSpace' | 'SEO' | 'Design' | 'Google Ads' | 'Meta Ads' | string;
 export type TeamType = 
@@ -82,6 +93,7 @@ export interface StationMember {
   avatarUrl?: string;
   phoneWhatsapp?: string;
   role?: string;
+  profileNames?: string[];
 }
 
 export interface StationGroup {

@@ -6,7 +6,8 @@ import {
   ComplainItem, 
   StoreAccount, 
   HandoverNote,
-  AnnouncementItem
+  AnnouncementItem,
+  TeamMember
 } from '../types';
 
 export const initialIssues: IssueItem[] = [
