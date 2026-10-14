@@ -39,9 +39,12 @@ export const StationView: React.FC = () => {
     savedMembers,
     addMemberToPool,
     removeMemberFromPool,
-    updateMemberInPool,
-    resetMemberPool
+    resetMemberPool,
+    hasPermission
   } = usePortal();
+
+  const canManageStations = hasPermission('manage_stations');
+  const canManageMembers = hasPermission('manage_station_members');
 
   // Search & Shift filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -412,13 +415,15 @@ export const StationView: React.FC = () => {
             </span>
           </div>
 
-          <button
-            onClick={() => setIsAddStationOpen(true)}
-            className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white text-black hover:bg-neutral-200 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
-          >
-            <Plus className="w-4 h-4 text-black" />
-            <span className="hidden sm:inline">Add Station</span>
-          </button>
+          {canManageStations && (
+            <button
+              onClick={() => setIsAddStationOpen(true)}
+              className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white text-black hover:bg-neutral-200 flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+            >
+              <Plus className="w-4 h-4 text-black" />
+              <span className="hidden sm:inline">Add Station</span>
+            </button>
+          )}
 
           {/* Master Member Directory Button */}
           <button
@@ -438,7 +443,7 @@ export const StationView: React.FC = () => {
           </button>
 
           {/* Team-wise Member Removal Button */}
-          {totalMembers > 0 && (
+          {canManageStations && totalMembers > 0 && (
             <button
               onClick={() => {
                 setSelectedTeamsToClear([]);
@@ -455,7 +460,7 @@ export const StationView: React.FC = () => {
           )}
 
           {/* Global Clear All Rosters */}
-          {totalMembers > 0 && (
+          {canManageStations && totalMembers > 0 && (
             <button
               onClick={() => setClearAllConfirm(true)}
               className="px-3 py-2 text-xs font-medium rounded-xl bg-red-950/40 border border-red-800/40 text-red-300 hover:bg-red-950/70 flex items-center gap-1.5 transition-colors shrink-0"

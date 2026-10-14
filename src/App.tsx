@@ -15,13 +15,18 @@ import { ComplainsView } from './components/complains/ComplainsView';
 import { QueueView } from './components/queue/QueueView';
 import { StoreMatrixView } from './components/stores/StoreMatrixView';
 import { DailyHandoverView } from './components/handover/DailyHandoverView';
+import { AccessDashboardView } from './components/access/AccessDashboardView';
+import { AccessRestrictedView } from './components/access/AccessRestrictedView';
 import { CommandPalette } from './components/modals/CommandPalette';
 import { AnnouncementsModal } from './components/modals/AnnouncementsModal';
 import { UserProfileModal } from './components/modals/UserProfileModal';
 
 const PortalMain: React.FC = () => {
-  const { activeTab, theme } = usePortal();
+  const { activeTab, theme, canAccessTab } = usePortal();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Check if active user has permission to view current tab
+  const isAuthorized = canAccessTab(activeTab);
 
   return (
     <div className={`flex h-screen w-screen overflow-hidden ${theme === 'dark' ? 'bg-[#090b0e] text-[#e2e8f0]' : 'bg-[#f8fafc] text-[#0f172a]'} font-sans antialiased transition-colors duration-200`}>
@@ -40,14 +45,21 @@ const PortalMain: React.FC = () => {
         <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-8 lg:py-8">
           <div className="max-w-[1560px] mx-auto min-h-full flex flex-col justify-between">
             <div>
-              {activeTab === 'overview' && <OverviewView />}
-              {activeTab === 'issues' && <IssueSheetView />}
-              {activeTab === 'updates' && <UpdateSheetView />}
-              {activeTab === 'stations' && <StationView />}
-              {activeTab === 'complains' && <ComplainsView />}
-              {activeTab === 'queue' && <QueueView />}
-              {activeTab === 'stores' && <StoreMatrixView />}
-              {activeTab === 'handover' && <DailyHandoverView />}
+              {!isAuthorized ? (
+                <AccessRestrictedView attemptedTab={activeTab} />
+              ) : (
+                <>
+                  {activeTab === 'overview' && <OverviewView />}
+                  {activeTab === 'issues' && <IssueSheetView />}
+                  {activeTab === 'updates' && <UpdateSheetView />}
+                  {activeTab === 'stations' && <StationView />}
+                  {activeTab === 'complains' && <ComplainsView />}
+                  {activeTab === 'queue' && <QueueView />}
+                  {activeTab === 'stores' && <StoreMatrixView />}
+                  {activeTab === 'handover' && <DailyHandoverView />}
+                  {activeTab === 'access' && <AccessDashboardView />}
+                </>
+              )}
             </div>
 
             {/* Bottom Credits matching screenshot */}

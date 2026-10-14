@@ -11,8 +11,9 @@ import {
   Megaphone, 
   ChevronRight,
   Clock,
-  CheckCircle2,
-  X
+  CheckCircle2, 
+  X,
+  ShieldCheck
 } from 'lucide-react';
 import { usePortal } from '../../context/PortalContext';
 import { NavTab } from '../../types';
@@ -27,6 +28,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
     activeTab, 
     setActiveTab, 
     user, 
+    currentUser,
+    currentRole,
+    canAccessTab,
     setIsAnnouncementsOpen, 
     setIsProfileOpen,
     queues,
@@ -34,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
     issues
   } = usePortal();
 
-  const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number }[] = [
+  const allNavItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     { 
       id: 'overview', 
       label: 'Overview', 
@@ -81,8 +85,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
       id: 'handover',
       label: 'Daily Handover',
       icon: <GitCompare className="w-[18px] h-[18px]" />
+    },
+    {
+      id: 'access',
+      label: 'Access & Roles',
+      icon: <ShieldCheck className="w-[18px] h-[18px]" />
     }
   ];
+
+  // Only render tabs that the active user has permission to view
+  const navItems = allNavItems.filter(item => canAccessTab(item.id));
 
   const handleNavClick = (tabId: NavTab) => {
     setActiveTab(tabId);

@@ -48,8 +48,13 @@ export const QueueView: React.FC = () => {
     deleteQueue, 
     deleteAllQueues, 
     user,
-    savedMembers 
+    savedMembers,
+    hasPermission 
   } = usePortal();
+
+  const canCreateQueue = hasPermission('create_queue');
+  const canProcessQueue = hasPermission('process_queue');
+  const canDeleteQueue = hasPermission('delete_queue') || hasPermission('delete_records');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All Status');
@@ -418,15 +423,17 @@ export const QueueView: React.FC = () => {
             <RotateCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-amber-400' : ''}`} />
           </button>
 
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 text-xs font-semibold rounded-lg bg-white text-black hover:bg-neutral-200 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ Create Queue Request</span>
-          </button>
+          {canCreateQueue && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-white text-black hover:bg-neutral-200 flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Create Queue Request</span>
+            </button>
+          )}
 
-          {queues.length > 0 && (
+          {canDeleteQueue && queues.length > 0 && (
             <button
               onClick={() => setIsDeleteAllModalOpen(true)}
               className="p-2 rounded-lg bg-[#11141c] hover:bg-red-950/40 border border-[#1e2531] hover:border-red-900/50 text-[#94a3b8] hover:text-red-400 transition-colors cursor-pointer"
@@ -842,20 +849,24 @@ export const QueueView: React.FC = () => {
                   </span>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleDeleteQueue(item.id, item.queueKey)}
-                      className="text-neutral-400 hover:text-red-400 transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
-                      title="Delete queue"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Delete</span>
-                    </button>
-                    <span className="text-[#334155]">·</span>
+                    {canDeleteQueue && (
+                      <>
+                        <button
+                          onClick={() => handleDeleteQueue(item.id, item.queueKey)}
+                          className="text-neutral-400 hover:text-red-400 transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
+                          title="Delete queue"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
+                        </button>
+                        <span className="text-[#334155]">·</span>
+                      </>
+                    )}
                     <button
                       onClick={() => handleOpenUpdateModal(item)}
                       className="text-white hover:text-amber-400 font-medium transition-colors cursor-pointer flex items-center gap-1 text-[11px]"
                     >
-                      <span>Manage / Updates</span>
+                      <span>{canProcessQueue ? 'Manage / Updates' : 'View Updates'}</span>
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>

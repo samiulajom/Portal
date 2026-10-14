@@ -6,7 +6,82 @@ export type NavTab =
   | 'complains' 
   | 'queue' 
   | 'stores' 
-  | 'handover';
+  | 'handover'
+  | 'access';
+
+// Permission keys for granular access control
+export type PermissionKey =
+  // Module View Access
+  | 'view_overview'
+  | 'view_issues'
+  | 'view_updates'
+  | 'view_stations'
+  | 'view_complains'
+  | 'view_queue'
+  | 'view_stores'
+  | 'view_handover'
+  | 'manage_access'
+  // Action Permissions
+  | 'create_queue'
+  | 'process_queue'
+  | 'delete_queue'
+  | 'create_issues'
+  | 'resolve_issues'
+  | 'create_updates'
+  | 'edit_updates'
+  | 'approve_updates'
+  | 'manage_stations'
+  | 'manage_station_members'
+  | 'create_complains'
+  | 'resolve_complains'
+  | 'manage_stores'
+  | 'create_handover'
+  | 'acknowledge_handover'
+  | 'export_data'
+  | 'delete_records'
+  // Overview Dashboard Granular Sections
+  | 'overview_view_kpi'
+  | 'overview_view_operations_wip'
+  | 'overview_view_sales_updates'
+  | 'overview_view_velocity'
+  | 'overview_view_stations_spotlight'
+  | 'overview_view_recent_activity';
+
+export interface RoleDefinition {
+  id: string;
+  name: string;
+  badgeColor: string;
+  badgeBg: string;
+  description: string;
+  isSystem?: boolean;
+  permissions: Record<PermissionKey, boolean>;
+}
+
+export interface PortalUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarText: string;
+  roleId: string; // references RoleDefinition.id
+  department: string;
+  shift: string;
+  phoneWhatsapp?: string;
+  isClockedIn?: boolean;
+  clockInTime?: string;
+  status: 'Active' | 'Inactive' | 'On Leave';
+  useCustomPermissions?: boolean; // If true, customPermissions overrides role's default
+  customPermissions?: Partial<Record<PermissionKey, boolean>>;
+}
+
+export interface AccessAuditLog {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actorRole: string;
+  action: 'UPDATE_ROLE' | 'UPDATE_USER_PERMISSIONS' | 'CREATE_USER' | 'DELETE_USER' | 'CREATE_ROLE' | 'RESET_PERMISSIONS';
+  targetName: string;
+  details: string;
+}
 
 // Global Team Directory — members saved once, assigned to stations as needed
 export interface TeamMember {

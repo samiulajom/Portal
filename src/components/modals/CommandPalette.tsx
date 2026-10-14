@@ -73,7 +73,8 @@ export const CommandPalette: React.FC = () => {
                   { label: 'Update Sheet (Entries)', tab: 'updates', icon: <FileText className="w-3.5 h-3.5 text-blue-400" /> },
                   { label: 'Station Roster', tab: 'stations', icon: <Users className="w-3.5 h-3.5 text-emerald-400" /> },
                   { label: 'Queue Requests', tab: 'queue', icon: <Layers className="w-3.5 h-3.5 text-purple-400" /> },
-                  { label: 'Store Matrix Accounts', tab: 'stores', icon: <Store className="w-3.5 h-3.5 text-cyan-400" /> }
+                  { label: 'Store Matrix Accounts', tab: 'stores', icon: <Store className="w-3.5 h-3.5 text-cyan-400" /> },
+                  { label: 'Roles & Access Control', tab: 'access', icon: <Users className="w-3.5 h-3.5 text-amber-400" /> }
                 ].map(item => (
                   <button
                     key={item.tab}

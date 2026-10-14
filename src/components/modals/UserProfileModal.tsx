@@ -3,7 +3,17 @@ import { User, X, Clock, Shield, CheckCircle2, RotateCcw, Laptop } from 'lucide-
 import { usePortal } from '../../context/PortalContext';
 
 export const UserProfileModal: React.FC = () => {
-  const { isProfileOpen, setIsProfileOpen, user, toggleClockIn, resetAllData } = usePortal();
+  const { 
+    isProfileOpen, 
+    setIsProfileOpen, 
+    user, 
+    currentUser, 
+    currentRole, 
+    canAccessTab, 
+    setActiveTab, 
+    toggleClockIn, 
+    resetAllData 
+  } = usePortal();
 
   if (!isProfileOpen) return null;
 
@@ -67,24 +77,42 @@ export const UserProfileModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Assigned Responsibilities */}
+        {/* Assigned Responsibilities & Role Info */}
         <div className="space-y-2 text-xs">
-          <span className="text-[#94a3b8] font-semibold block">Primary Stations & Stores</span>
-          <div className="p-3 rounded-lg bg-[#121620] border border-[#1e2533] space-y-1.5 text-neutral-300">
-            <div className="flex justify-between">
+          <span className="text-[#94a3b8] font-semibold block">Role & Access Level</span>
+          <div className="p-3 rounded-lg bg-[#121620] border border-[#1e2533] space-y-2 text-neutral-300">
+            <div className="flex items-center justify-between">
               <span className="text-[#64748b]">Department:</span>
-              <span className="text-white font-medium">Shopify Dev</span>
+              <span className="text-white font-medium">{currentUser.department}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-[#64748b]">Primary Account:</span>
-              <span className="text-amber-300 font-mono">ecom_store3_Fiverr</span>
+            <div className="flex items-center justify-between">
+              <span className="text-[#64748b]">Assigned Role:</span>
+              <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${currentRole.badgeColor} ${currentRole.badgeBg}`}>
+                {currentRole.name}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-[#64748b]">Sales Partner:</span>
-              <span className="text-white">Shishir chowdhory</span>
+            <div className="flex items-center justify-between">
+              <span className="text-[#64748b]">Access Mode:</span>
+              <span className={`text-[11px] font-medium ${currentUser.useCustomPermissions ? 'text-amber-400' : 'text-slate-400'}`}>
+                {currentUser.useCustomPermissions ? 'Custom Person Overrides Active' : 'Inherited from Role Defaults'}
+              </span>
             </div>
           </div>
         </div>
+
+        {/* Access Dashboard shortcut button */}
+        {canAccessTab('access') && (
+          <button
+            onClick={() => {
+              setActiveTab('access');
+              setIsProfileOpen(false);
+            }}
+            className="w-full py-2 px-3 rounded-xl bg-[#141b27] hover:bg-[#1d273a] text-amber-400 hover:text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Manage Team Roles & Access Dashboard</span>
+          </button>
+        )}
 
         {/* Factory Reset */}
         <div className="pt-2 border-t border-[#202937] flex items-center justify-between text-xs">
