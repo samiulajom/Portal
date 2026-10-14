@@ -7,7 +7,8 @@ import {
   StoreAccount, 
   HandoverNote,
   AnnouncementItem,
-  TeamMember
+  TeamMember,
+  SavedMember
 } from '../types';
 
 export const initialIssues: IssueItem[] = [
@@ -307,13 +308,35 @@ export const initialStations: StationGroup[] = [
     name: 'Graphics Design',
     shift: 'Morning Shift',
     updatedAt: 'Oct 06, 2026 · 7:00 AM',
-    members: []
+    members: [
+      {
+        id: 'mem-g1',
+        name: 'MD. Asif Reza',
+        initials: 'AR',
+        phoneWhatsapp: '+8801712998877',
+        role: 'Visual Design Lead'
+      }
+    ],
+    dutyContact: {
+      id: 'mem-g1',
+      name: 'MD. Asif Reza',
+      initials: 'AR',
+      phoneWhatsapp: '+8801712998877',
+      role: 'Visual Design Lead'
+    }
   },
   {
     id: 'st-2',
     name: 'Custom station update',
     shift: 'Morning Shift',
     updatedAt: 'Oct 06, 2026 · 7:21 AM',
+    dutyContact: {
+      id: 'mem-1',
+      name: 'MD. Rakib Khan',
+      initials: 'MR',
+      phoneWhatsapp: '+8801712345671',
+      role: 'Custom Lead'
+    },
     members: [
       {
         id: 'mem-1',
@@ -336,6 +359,13 @@ export const initialStations: StationGroup[] = [
     name: 'Graphics Design',
     shift: 'Night Shift',
     updatedAt: 'Oct 06, 2026 · 7:26 AM',
+    dutyContact: {
+      id: 'mem-3',
+      name: 'Naimul Islam Tasin',
+      initials: 'NI',
+      phoneWhatsapp: '+8801912345673',
+      role: 'Visual Designer'
+    },
     members: [
       {
         id: 'mem-3',
@@ -358,6 +388,13 @@ export const initialStations: StationGroup[] = [
     name: 'META + SMM',
     shift: 'Morning Shift',
     updatedAt: 'Oct 06, 2026 · 7:35 AM',
+    dutyContact: {
+      id: 'mem-5',
+      name: 'Rokibul Islam 👾',
+      initials: 'RI',
+      phoneWhatsapp: '+8801512345675',
+      role: 'Meta Ads Lead'
+    },
     members: [
       {
         id: 'mem-5',
@@ -387,6 +424,13 @@ export const initialStations: StationGroup[] = [
     name: 'SEO',
     shift: 'Morning Shift',
     updatedAt: 'Oct 06, 2026 · 7:38 AM',
+    dutyContact: {
+      id: 'mem-8',
+      name: 'Md. Samiun Islam',
+      initials: 'MS',
+      phoneWhatsapp: '+8801912345678',
+      role: 'Technical SEO'
+    },
     members: [
       {
         id: 'mem-8',
@@ -416,6 +460,13 @@ export const initialStations: StationGroup[] = [
     name: 'Google Ads',
     shift: 'Morning Shift',
     updatedAt: 'Oct 06, 2026 · 7:46 AM',
+    dutyContact: {
+      id: 'mem-11',
+      name: 'Kawsar Mahmud',
+      initials: 'KM',
+      phoneWhatsapp: '+8801812345681',
+      role: 'Search Ads Strategist'
+    },
     members: [
       {
         id: 'mem-11',
@@ -445,6 +496,13 @@ export const initialStations: StationGroup[] = [
     name: 'Shopify Dev',
     shift: 'Morning Shift',
     updatedAt: 'Oct 06, 2026 · 7:15 AM',
+    dutyContact: {
+      id: 'mem-15',
+      name: 'Tanvir Ahmed',
+      initials: 'TA',
+      phoneWhatsapp: '+8801722334455',
+      role: 'Shopify Liquid Expert'
+    },
     members: [
       {
         id: 'mem-14',
@@ -474,6 +532,13 @@ export const initialStations: StationGroup[] = [
     name: 'Wix / Webflow',
     shift: 'Night Shift',
     updatedAt: 'Oct 06, 2026 · 8:10 PM',
+    dutyContact: {
+      id: 'mem-17',
+      name: 'Fahim Chowdhury',
+      initials: 'FC',
+      phoneWhatsapp: '+8801744556677',
+      role: 'Wix Studio Specialist'
+    },
     members: [
       {
         id: 'mem-17',
@@ -495,30 +560,64 @@ export const initialStations: StationGroup[] = [
 
 export const initialQueues: QueueItem[] = [
   {
+    id: 'qu-0',
+    queueKey: 'QU-329854',
+    status: 'Requested',
+    priority: 'Urgent',
+    department: 'Operation',
+    orderId: 'FO92817452',
+    clientName: 'alexander_ecom',
+    profileStore: 'ecom_store3_fiverr',
+    title: 'Need client inbox update for bundle checkout 404 error',
+    submittedBy: 'Tanim (Operation)',
+    salesPerson: 'Shishir chowdhory',
+    createdAt: '25 minutes ago',
+    notes: 'Operation discovered a 404 error on client checkout page. Attached screenshot for sales rep. Please check inbox with client and share current order page link.',
+    imageName: 'image.png',
+    imageUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" rx="8" fill="%230f172a"/><rect x="20" y="20" width="560" height="40" rx="6" fill="%231e293b"/><circle cx="45" cy="40" r="6" fill="%23ef4444"/><circle cx="65" cy="40" r="6" fill="%23f59e0b"/><circle cx="85" cy="40" r="6" fill="%2310b981"/><text x="110" y="44" fill="%2394a3b8" font-family="sans-serif" font-size="12">Fiverr Inbox Screenshot - Client Bug Report</text><rect x="20" y="75" width="560" height="245" rx="6" fill="%23111827"/><text x="40" y="115" fill="%23f8fafc" font-family="sans-serif" font-weight="bold" font-size="14">Client: alexander_ecom</text><text x="40" y="145" fill="%23cbd5e1" font-family="sans-serif" font-size="12">"Hi team, the product bundle button on checkout gives a 404 error when clicking discount code."</text><rect x="40" y="170" width="230" height="30" rx="4" fill="%23dc2626" fill-opacity="0.2"/><text x="50" y="190" fill="%23f87171" font-family="sans-serif" font-size="11">Error: Invalid Discount Endpoint (404)</text><text x="40" y="240" fill="%2394a3b8" font-family="sans-serif" font-size="11">Operation Request: Need sales person to check active order status &amp; send inbox URL.</text></svg>',
+    updates: []
+  },
+  {
     id: 'qu-1',
     queueKey: 'QU-329851',
     status: 'Given',
+    priority: 'Normal',
+    department: 'Operation',
+    orderId: 'FO38920194',
     clientName: 'christinaslo',
     profileStore: 'ecom_store3_fiverr',
     title: 'inbox page update',
     conversationUrl: 'https://fiverr.com/inbox/christinaslo',
-    submittedBy: 'Md Samiul Ajom',
+    orderPageUrl: 'https://fiverr.com/orders/FO38920194',
+    submittedBy: 'Md Samiul Ajom (Operation)',
     salesPerson: 'Shishir chowdhory',
     createdAt: 'about 4 hours ago',
-    notes: 'Client confirmed modifications for header logo padding and product bundle discount badge.'
-  },
-  {
-    id: 'qu-2',
-    queueKey: 'QU-329849',
-    status: 'Completed',
-    clientName: 'anas_r_naser',
-    profileStore: 'ecom_store3_fiverr',
-    title: 'checkout page arabic rtl layout fixes',
-    conversationUrl: 'https://fiverr.com/inbox/anas_r_naser',
-    submittedBy: 'Md Samiul Ajom',
-    salesPerson: 'Shishir chowdhory',
-    createdAt: '1 day ago',
-    notes: 'Successfully deployed CSS RTL overrides in theme.liquid.'
+    notes: 'Client confirmed modifications for header logo padding and product bundle discount badge.',
+    imageName: 'image.png',
+    imageUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="340" viewBox="0 0 600 340"><rect width="600" height="340" rx="8" fill="%230f172a"/><rect x="20" y="20" width="560" height="40" rx="6" fill="%231e293b"/><circle cx="45" cy="40" r="6" fill="%23ef4444"/><circle cx="65" cy="40" r="6" fill="%23f59e0b"/><circle cx="85" cy="40" r="6" fill="%2310b981"/><text x="110" y="44" fill="%2394a3b8" font-family="sans-serif" font-size="12">Client Feedback Snippet</text><rect x="20" y="75" width="560" height="245" rx="6" fill="%23111827"/><text x="40" y="115" fill="%23f8fafc" font-family="sans-serif" font-weight="bold" font-size="14">Header Padding &amp; Discount Badge</text><text x="40" y="145" fill="%23cbd5e1" font-family="sans-serif" font-size="12">"Please reduce top margin to 12px and make badge background emerald green."</text></svg>',
+    updates: [
+      {
+        id: 'qup-1',
+        createdAt: '3 hours ago',
+        salesPerson: 'Shishir chowdhory',
+        comment: 'Client messaged in inbox requesting mobile header logo padding adjustment and product bundle badge.',
+        inboxUrl: 'https://fiverr.com/inbox/christinaslo',
+        orderPageUrl: 'https://fiverr.com/orders/FO38920194',
+        otherLinks: [
+          { id: 'lnk-1', label: 'Figma Screen', url: 'https://figma.com/design/example-header' },
+          { id: 'lnk-2', label: 'Loom Video', url: 'https://loom.com/share/example-walkthrough' }
+        ],
+        statusChange: 'Given'
+      },
+      {
+        id: 'qup-2',
+        createdAt: '1 hour ago',
+        salesPerson: 'Shishir chowdhory',
+        comment: 'Spoke with dev team lead; custom CSS is deployed. Waiting for client to confirm from preview link.',
+        inboxUrl: 'https://fiverr.com/inbox/christinaslo',
+        orderPageUrl: 'https://fiverr.com/orders/FO38920194'
+      }
+    ]
   }
 ];
 
@@ -669,3 +768,29 @@ export const initialAnnouncements: AnnouncementItem[] = [
     priority: 'normal'
   }
 ];
+
+export const initialSavedMembers: SavedMember[] = [
+  { id: 'smem-0', name: 'MD. Asif Reza', initials: 'AR', phoneWhatsapp: '+8801712998877', role: 'Visual Design Lead', department: 'Graphics Design' },
+  { id: 'smem-1', name: 'MD. Rakib Khan', initials: 'MR', phoneWhatsapp: '+8801712345671', role: 'Custom Lead', department: 'Custom station update' },
+  { id: 'smem-2', name: 'MD ABRAR KARIM RUPU', initials: 'MA', phoneWhatsapp: '+8801812345672', role: 'Sr. Specialist', department: 'Custom station update' },
+  { id: 'smem-3', name: 'Naimul Islam Tasin', initials: 'NI', phoneWhatsapp: '+8801912345673', role: 'Visual Designer', department: 'Graphics Design' },
+  { id: 'smem-4', name: 'MD SAYHAM JAMAN ADIL', initials: 'SA', phoneWhatsapp: '+8801612345674', role: 'UI Designer', department: 'Graphics Design' },
+  { id: 'smem-5', name: 'Rokibul Islam 👾', initials: 'RI', phoneWhatsapp: '+8801512345675', role: 'Meta Ads Lead', department: 'META + SMM' },
+  { id: 'smem-6', name: 'Abdullah Bin Sadiq', initials: 'AS', phoneWhatsapp: '+8801712345676', role: 'SMM Campaigner', department: 'META + SMM' },
+  { id: 'smem-7', name: 'Sanjida Sultana Snigdha 👻', initials: 'SS', phoneWhatsapp: '+8801812345677', role: 'Creative Copy & Content', department: 'META + SMM' },
+  { id: 'smem-8', name: 'Md. Samiun Islam', initials: 'MS', phoneWhatsapp: '+8801912345678', role: 'Technical SEO', department: 'SEO' },
+  { id: 'smem-9', name: 'Reiad', initials: 'R', phoneWhatsapp: '+8801612345679', role: 'Backlink Specialist', department: 'SEO' },
+  { id: 'smem-10', name: 'Sayed Biplob Hossain', initials: 'SB', phoneWhatsapp: '+8801712345680', role: 'On-Page Auditor', department: 'SEO' },
+  { id: 'smem-11', name: 'Kawsar Mahmud', initials: 'KM', phoneWhatsapp: '+8801812345681', role: 'Search Ads Strategist', department: 'Google Ads' },
+  { id: 'smem-12', name: 'Fahim Shakil', initials: 'FS', phoneWhatsapp: '+8801912345682', role: 'Performance Max Lead', department: 'Google Ads' },
+  { id: 'smem-13', name: 'Mahbubur Rahman', initials: 'MR', phoneWhatsapp: '+8801512345683', role: 'Conversion Analytics', department: 'Google Ads' },
+  { id: 'smem-14', name: 'Md Samiul Ajom', initials: 'SA', phoneWhatsapp: '+8801711223344', role: 'Jr. Shopify Developer', department: 'Shopify Dev' },
+  { id: 'smem-15', name: 'Tanvir Ahmed', initials: 'TA', phoneWhatsapp: '+8801722334455', role: 'Shopify Liquid Expert', department: 'Shopify Dev' },
+  { id: 'smem-16', name: 'Zubayer Hossain', initials: 'ZH', phoneWhatsapp: '+8801733445566', role: 'Frontend Architect', department: 'Shopify Dev' },
+  { id: 'smem-17', name: 'Fahim Chowdhury', initials: 'FC', phoneWhatsapp: '+8801744556677', role: 'Wix Studio Specialist', department: 'Wix / Webflow' },
+  { id: 'smem-18', name: 'Sifat Hassan', initials: 'SH', phoneWhatsapp: '+8801755667788', role: 'Webflow Animator', department: 'Wix / Webflow' },
+  { id: 'smem-19', name: 'Shishir Chowdhory', initials: 'SC', phoneWhatsapp: '+8801788990011', role: 'Sales Lead', department: 'Sales' },
+  { id: 'smem-20', name: 'Sakib Sarder', initials: 'SS', phoneWhatsapp: '+8801799001122', role: 'Sr. Operation Lead', department: 'Operations' },
+  { id: 'smem-21', name: 'Rifat (Sales)', initials: 'RS', phoneWhatsapp: '+8801711002233', role: 'Sales TL', department: 'Sales' }
+];
+

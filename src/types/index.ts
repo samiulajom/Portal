@@ -96,28 +96,66 @@ export interface StationMember {
   profileNames?: string[];
 }
 
+export interface SavedMember {
+  id: string;
+  name: string;
+  initials: string;
+  avatarUrl?: string;
+  phoneWhatsapp?: string;
+  role?: string;
+  profileNames?: string[];
+  department?: string;
+}
+
 export interface StationGroup {
   id: string;
   name: string;
   shift: ShiftType;
   updatedAt: string;
   members: StationMember[];
+  dutyContact?: StationMember;
 }
 
-export type QueueStatus = 'Requested' | 'Given' | 'Completed';
+export type QueueStatus = 'Requested' | 'Given';
+
+export interface QueueUpdateLink {
+  id: string;
+  label?: string;
+  url: string;
+}
+
+export interface QueueUpdate {
+  id: string;
+  createdAt: string;
+  salesPerson: string;
+  comment: string;
+  inboxUrl?: string;
+  orderPageUrl?: string;
+  imageUrl?: string;
+  imageName?: string;
+  otherLinks?: QueueUpdateLink[];
+  statusChange?: QueueStatus;
+}
 
 export interface QueueItem {
   id: string;
   queueKey: string; // e.g. QU-329851
   status: QueueStatus;
+  priority?: 'Normal' | 'Urgent';
+  department?: string; // e.g. 'Operation'
+  orderId?: string; // e.g. FO38920194 or custom order number
   clientName: string;
   profileStore: string;
   title: string;
   conversationUrl?: string;
+  orderPageUrl?: string;
   submittedBy: string;
   salesPerson: string;
   createdAt: string;
   notes?: string;
+  imageUrl?: string; // Request screenshot or attachment (e.g. image.png)
+  imageName?: string; // filename e.g. "image.png"
+  updates?: QueueUpdate[];
 }
 
 export type ComplainSeverity = 'Low' | 'Medium' | 'High' | 'Critical';

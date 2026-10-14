@@ -4,11 +4,14 @@ import {
   IssueItem,
   UpdateEntry,
   StationGroup,
+  StationMember,
   QueueItem,
+  QueueUpdate,
   ComplainItem,
   StoreAccount,
   HandoverNote,
-  AnnouncementItem
+  AnnouncementItem,
+  SavedMember
 } from '../types';
 import {
   initialIssues,
@@ -18,7 +21,8 @@ import {
   initialComplains,
   initialStores,
   initialHandovers,
-  initialAnnouncements
+  initialAnnouncements,
+  initialSavedMembers
 } from '../data/mockData';
 
 interface UserProfile {
@@ -61,16 +65,40 @@ interface PortalContextType {
   toggleTlCheck: (id: string) => void;
   
   stations: StationGroup[];
-  addStation: (name: string, shift: StationGroup['shift']) => void;
-  addMemberToStation: (stationId: string, member: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }) => void;
+  addStation: (name: string, shift: StationGroup['shift'], dutyContact?: StationMember) => void;
+  setStationDutyContact: (stationId: string, contact: StationMember) => void;
+  addMemberToStation: (stationId: string, member: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }, saveToPool?: boolean) => void;
+  addMultipleMembersToStation: (stationId: string, members: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }[]) => void;
   removeMemberFromStation: (stationId: string, memberId: string) => void;
   deleteStation: (stationId: string) => void;
   clearStationMembers: (stationId: string) => void;
+  clearStationsMembers: (stationIds: string[]) => void;
   clearAllStationsMembers: () => void;
+
+  savedMembers: SavedMember[];
+  addMemberToPool: (member: Omit<SavedMember, 'id'>) => SavedMember;
+  removeMemberFromPool: (id: string) => void;
+  updateMemberInPool: (id: string, updates: Partial<SavedMember>) => void;
+  resetMemberPool: () => void;
   
   queues: QueueItem[];
   addQueue: (q: Omit<QueueItem, 'id' | 'queueKey' | 'createdAt'>) => void;
   updateQueueStatus: (id: string, status: QueueItem['status']) => void;
+  updateQueue: (id: string, updates: Partial<QueueItem>) => void;
+  addQueueUpdate: (
+    queueId: string,
+    update: {
+      salesPerson: string;
+      comment: string;
+      inboxUrl?: string;
+      orderPageUrl?: string;
+      imageUrl?: string;
+      imageName?: string;
+      otherLinks?: { id?: string; label?: string; url: string }[];
+      statusChange?: QueueItem['status'];
+    }
+  ) => void;
+  deleteQueueUpdate: (queueId: string, updateId: string) => void;
   deleteQueue: (id: string) => void;
   deleteAllQueues: () => void;
   
@@ -111,7 +139,8 @@ const STORAGE_KEYS = {
   COMPLAINS: 'scaleup_portal_complains',
   STORES: 'scaleup_portal_stores',
   HANDOVERS: 'scaleup_portal_handovers',
-  USER: 'scaleup_portal_user'
+  USER: 'scaleup_portal_user',
+  MEMBER_POOL: 'scaleup_portal_member_pool_v1'
 };
 
 export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -162,7 +191,26 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [stations, setStations] = useState<StationGroup[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.STATIONS);
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((st: StationGroup) => {
+            const initialMatch = initialStations.find(is => is.id === st.id) ||
+                                 initialStations.find(is => is.name.toLowerCase() === st.name.toLowerCase());
+            let updatedMembers = st.members || [];
+            // If st-1 had 0 members in previous storage, hydrate with default initial members
+            if (st.id === 'st-1' && updatedMembers.length === 0 && initialMatch?.members && initialMatch.members.length > 0) {
+              updatedMembers = initialMatch.members;
+            }
+            const fallbackContact = st.dutyContact || initialMatch?.dutyContact || (updatedMembers.length > 0 ? updatedMembers[0] : initialSavedMembers[0]);
+            return {
+              ...st,
+              members: updatedMembers,
+              dutyContact: fallbackContact
+            };
+          });
+        }
+      } catch (e) { /* ignore */ }
     }
     return initialStations;
   });
@@ -197,6 +245,17 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try { return JSON.parse(saved); } catch (e) { /* ignore */ }
     }
     return initialHandovers;
+  });
+
+  const [savedMembers, setSavedMembers] = useState<SavedMember[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.MEMBER_POOL);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) { /* ignore */ }
+    }
+    return initialSavedMembers;
   });
 
   const [announcements] = useState<AnnouncementItem[]>(initialAnnouncements);
@@ -266,6 +325,10 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.HANDOVERS, JSON.stringify(handovers));
   }, [handovers]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MEMBER_POOL, JSON.stringify(savedMembers));
+  }, [savedMembers]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
@@ -377,10 +440,20 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   // Stations handlers
-  const addStation = (name: string, shift: StationGroup['shift']) => {
+  const addStation = (name: string, shift: StationGroup['shift'], dutyContact?: StationMember) => {
     const id = `st-${Date.now()}`;
     const now = new Date();
     const dateStr = `${now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} · ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    
+    // Default duty contact
+    const contact = dutyContact || {
+      id: `mem-${Date.now()}-lead`,
+      name: user.name || 'Station In-Charge',
+      initials: (user.name || 'SC').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'SC',
+      role: 'Station In-Charge',
+      phoneWhatsapp: '+8801712000000'
+    };
+
     setStations(prev => [
       ...prev,
       {
@@ -388,16 +461,24 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         name,
         shift,
         updatedAt: dateStr,
-        members: []
+        members: [contact],
+        dutyContact: contact
       }
     ]);
   };
 
+  const setStationDutyContact = (stationId: string, contact: StationMember) => {
+    setStations(prev =>
+      prev.map(st => (st.id === stationId ? { ...st, dutyContact: contact } : st))
+    );
+  };
+
   const addMemberToStation = (
     stationId: string,
-    member: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }
+    member: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] },
+    saveToPool: boolean = true
   ) => {
-    const memId = `mem-${Date.now()}`;
+    const memId = `mem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     setStations(prev =>
       prev.map(st => {
         if (st.id === stationId) {
@@ -409,6 +490,74 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return st;
       })
     );
+
+    // Auto save to master member pool if requested
+    if (saveToPool && member.name.trim()) {
+      setSavedMembers(prev => {
+        const exists = prev.some(m => m.name.trim().toLowerCase() === member.name.trim().toLowerCase());
+        if (!exists) {
+          const newSaved: SavedMember = {
+            id: `smem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: member.name.trim(),
+            initials: member.initials,
+            role: member.role,
+            phoneWhatsapp: member.phoneWhatsapp,
+            profileNames: member.profileNames
+          };
+          return [newSaved, ...prev];
+        }
+        return prev;
+      });
+    }
+  };
+
+  const addMultipleMembersToStation = (
+    stationId: string,
+    membersList: { name: string; initials: string; role?: string; phoneWhatsapp?: string; profileNames?: string[] }[]
+  ) => {
+    if (membersList.length === 0) return;
+    setStations(prev =>
+      prev.map(st => {
+        if (st.id === stationId) {
+          const newMembers = membersList.map((m, idx) => ({
+            id: `mem-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 5)}`,
+            ...m
+          }));
+          return {
+            ...st,
+            members: [...st.members, ...newMembers]
+          };
+        }
+        return st;
+      })
+    );
+  };
+
+  const addMemberToPool = (member: Omit<SavedMember, 'id'>) => {
+    const existing = savedMembers.find(m => m.name.trim().toLowerCase() === member.name.trim().toLowerCase());
+    if (existing) {
+      const updated = { ...existing, ...member };
+      setSavedMembers(prev => prev.map(m => m.id === existing.id ? updated : m));
+      return updated;
+    }
+    const newMember: SavedMember = {
+      ...member,
+      id: `smem-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`
+    };
+    setSavedMembers(prev => [newMember, ...prev]);
+    return newMember;
+  };
+
+  const removeMemberFromPool = (id: string) => {
+    setSavedMembers(prev => prev.filter(m => m.id !== id));
+  };
+
+  const updateMemberInPool = (id: string, updates: Partial<SavedMember>) => {
+    setSavedMembers(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+  };
+
+  const resetMemberPool = () => {
+    setSavedMembers(initialSavedMembers);
   };
 
   const removeMemberFromStation = (stationId: string, memberId: string) => {
@@ -435,6 +584,13 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
   };
 
+  const clearStationsMembers = (stationIds: string[]) => {
+    const idsSet = new Set(stationIds);
+    setStations(prev =>
+      prev.map(st => idsSet.has(st.id) ? { ...st, members: [] } : st)
+    );
+  };
+
   const clearAllStationsMembers = () => {
     setStations(prev => prev.map(st => ({ ...st, members: [] })));
   };
@@ -444,6 +600,7 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const randomNum = Math.floor(100000 + Math.random() * 900000);
     const newItem: QueueItem = {
       ...q,
+      updates: q.updates || [],
       id: `qu-${Date.now()}`,
       queueKey: `QU-${randomNum}`,
       createdAt: 'Just now'
@@ -453,6 +610,77 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const updateQueueStatus = (id: string, status: QueueItem['status']) => {
     setQueues(prev => prev.map(q => (q.id === id ? { ...q, status } : q)));
+  };
+
+  const updateQueue = (id: string, updates: Partial<QueueItem>) => {
+    setQueues(prev => prev.map(q => (q.id === id ? { ...q, ...updates } : q)));
+  };
+
+  const addQueueUpdate = (
+    queueId: string,
+    update: {
+      salesPerson: string;
+      comment: string;
+      inboxUrl?: string;
+      orderPageUrl?: string;
+      imageUrl?: string;
+      imageName?: string;
+      otherLinks?: { id?: string; label?: string; url: string }[];
+      statusChange?: QueueItem['status'];
+    }
+  ) => {
+    const now = new Date();
+    const formattedTime = `${now.toLocaleDateString('en-US', { day: '2-digit', month: 'short' })} · ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    const newUpdate: QueueUpdate = {
+      id: `qup-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: formattedTime,
+      salesPerson: update.salesPerson.trim() || 'Sales Rep',
+      comment: update.comment.trim(),
+      inboxUrl: update.inboxUrl?.trim() || undefined,
+      orderPageUrl: update.orderPageUrl?.trim() || undefined,
+      imageUrl: update.imageUrl,
+      imageName: update.imageName,
+      otherLinks: update.otherLinks && update.otherLinks.length > 0
+        ? update.otherLinks
+            .filter(l => l.url && l.url.trim())
+            .map((l, idx) => ({
+              id: l.id || `lnk-${Date.now()}-${idx}`,
+              label: l.label?.trim() || 'Link',
+              url: l.url.trim()
+            }))
+        : undefined,
+      statusChange: update.statusChange
+    };
+
+    setQueues(prev =>
+      prev.map(q => {
+        if (q.id === queueId) {
+          const currentUpdates = q.updates || [];
+          return {
+            ...q,
+            status: update.statusChange || q.status,
+            conversationUrl: update.inboxUrl?.trim() || q.conversationUrl,
+            orderPageUrl: update.orderPageUrl?.trim() || q.orderPageUrl,
+            updates: [newUpdate, ...currentUpdates]
+          };
+        }
+        return q;
+      })
+    );
+  };
+
+  const deleteQueueUpdate = (queueId: string, updateId: string) => {
+    setQueues(prev =>
+      prev.map(q => {
+        if (q.id === queueId) {
+          return {
+            ...q,
+            updates: (q.updates || []).filter(u => u.id !== updateId)
+          };
+        }
+        return q;
+      })
+    );
   };
 
   const deleteQueue = (id: string) => {
@@ -566,14 +794,25 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         toggleTlCheck,
         stations,
         addStation,
+        setStationDutyContact,
         addMemberToStation,
+        addMultipleMembersToStation,
         removeMemberFromStation,
         deleteStation,
         clearStationMembers,
+        clearStationsMembers,
         clearAllStationsMembers,
+        savedMembers,
+        addMemberToPool,
+        removeMemberFromPool,
+        updateMemberInPool,
+        resetMemberPool,
         queues,
         addQueue,
         updateQueueStatus,
+        updateQueue,
+        addQueueUpdate,
+        deleteQueueUpdate,
         deleteQueue,
         deleteAllQueues,
         complains,

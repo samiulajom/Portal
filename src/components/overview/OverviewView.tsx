@@ -489,7 +489,7 @@ export const OverviewView: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {stations.slice(1, 4).map(st => (
+              {stations.slice(0, 4).map(st => (
                 <div key={st.id} className="p-3 rounded-lg bg-[#11141c] border border-[#1a212c] space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-neutral-200">{st.name}</span>
@@ -497,7 +497,7 @@ export const OverviewView: React.FC = () => {
                       {st.shift}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {st.members.map(m => (
                       <span key={m.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#181d26] text-[11px] text-[#cbd5e1] border border-[#283244]">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
