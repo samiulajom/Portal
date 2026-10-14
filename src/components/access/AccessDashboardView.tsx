@@ -86,7 +86,7 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
     permissions: [
       { key: 'create_updates', label: 'Add Updates', description: 'Submit new update entries to the live sheet' },
       { key: 'edit_updates', label: 'Edit Existing Updates', description: 'Modify remarks, messages, or assignees' },
-      { key: 'approve_updates', label: 'TL Check & Verification', description: 'Mark Team Leader checkmark & approve entries' }
+      { key: 'approve_updates', label: 'TL Check & Verification (Admin & TL Only)', description: 'Mark Team Leader checkmark & approve entries. Restricted to Admin & Team Leader by default.' }
     ]
   },
   {

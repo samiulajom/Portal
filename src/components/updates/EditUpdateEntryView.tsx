@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Check, ChevronDown, Trash2, Lightbulb, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Trash2, Lightbulb, CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
 import { UpdateEntry } from '../../types';
 
 interface EditUpdateEntryViewProps {
@@ -10,6 +10,7 @@ interface EditUpdateEntryViewProps {
   onSendComplete?: (updated: UpdateEntry) => void;
   availableProfiles?: string[];
   currentUser?: string;
+  canApproveUpdates?: boolean;
 }
 
 const DEFAULT_KNOWN_PROFILES = [
@@ -30,7 +31,8 @@ export const EditUpdateEntryView: React.FC<EditUpdateEntryViewProps> = ({
   onDelete,
   onSendComplete,
   availableProfiles = [],
-  currentUser = 'Samiul'
+  currentUser = 'Samiul',
+  canApproveUpdates = false
 }) => {
   const [profile, setProfile] = useState(entry.profile || '');
   const [clientName, setClientName] = useState(entry.clientName || '');
@@ -40,6 +42,8 @@ export const EditUpdateEntryView: React.FC<EditUpdateEntryViewProps> = ({
   const [commentSales, setCommentSales] = useState(entry.commentSales || '');
   const [updateTo, setUpdateTo] = useState(entry.updateTo || 'Inbox Page Update');
   const [message, setMessage] = useState(entry.message || '');
+  const [tlCheck, setTlCheck] = useState(entry.tlCheck || false);
+  const [tlAt, setTlAt] = useState(entry.tlAt || '');
   const [aiToggle, setAiToggle] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -67,7 +71,9 @@ export const EditUpdateEntryView: React.FC<EditUpdateEntryViewProps> = ({
       commentOperation: commentOperation.trim(),
       commentSales: commentSales.trim(),
       updateTo: updateTo as any,
-      message: message.trim()
+      message: message.trim(),
+      tlCheck: canApproveUpdates ? tlCheck : entry.tlCheck,
+      tlAt: canApproveUpdates ? tlAt : entry.tlAt
     });
   };
 
@@ -87,6 +93,8 @@ export const EditUpdateEntryView: React.FC<EditUpdateEntryViewProps> = ({
       commentSales: commentSales.trim(),
       updateTo: updateTo as any,
       message: message.trim(),
+      tlCheck: canApproveUpdates ? tlCheck : entry.tlCheck,
+      tlAt: canApproveUpdates ? tlAt : entry.tlAt,
       status: 'completed',
       sentAt: sentTimeStr,
       sentBy: currentUser
@@ -246,6 +254,65 @@ export const EditUpdateEntryView: React.FC<EditUpdateEntryViewProps> = ({
               <option value="Query Update">Query Update</option>
             </select>
             <ChevronDown className="w-4 h-4 text-[#713f12] absolute right-4 top-3 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* TL Check & Verification Block */}
+        <div className="p-4 rounded-xl bg-[#0b0e14] border border-[#1e2533] space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className={`p-1.5 rounded-lg ${canApproveUpdates ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
+                {canApproveUpdates ? <ShieldCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </span>
+              <div>
+                <span className="text-xs font-semibold text-white block">
+                  Team Leader (TL) Check & Verification
+                </span>
+                <p className="text-[11px] text-[#94a3b8]">
+                  {canApproveUpdates 
+                    ? 'Authorized: You can check/uncheck this update verification as Team Leader or Administrator.' 
+                    : 'Restricted: Only Admin and Team Leader can verify or alter TL Check.'}
+                </p>
+              </div>
+            </div>
+
+            {canApproveUpdates ? (
+              <label className="flex items-center gap-2 cursor-pointer select-none bg-[#121622] hover:bg-[#181e2e] px-3 py-1.5 rounded-lg border border-[#232b3d] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={tlCheck}
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setTlCheck(checked);
+                    if (checked) {
+                      const now = new Date();
+                      const timeStr = `${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${currentUser.split(' ')[0] || 'TL'})`;
+                      setTlAt(timeStr);
+                    } else {
+                      setTlAt('—');
+                    }
+                  }}
+                  className="w-4 h-4 rounded text-emerald-600 bg-[#161a24] border-[#2b3548] focus:ring-emerald-500 cursor-pointer"
+                />
+                <span className={`text-xs font-medium ${tlCheck ? 'text-emerald-400' : 'text-[#94a3b8]'}`}>
+                  {tlCheck ? `TL Verified ${tlAt ? `(${tlAt})` : ''}` : 'Mark as TL Checked'}
+                </span>
+              </label>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#141822] border border-[#232b3b] text-xs">
+                <span className="text-[#64748b]">Status:</span>
+                <span className={entry.tlCheck ? 'text-emerald-400 font-semibold flex items-center gap-1' : 'text-amber-400 font-semibold'}>
+                  {entry.tlCheck ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Verified {entry.tlAt ? `(${entry.tlAt})` : ''}</span>
+                    </>
+                  ) : (
+                    'Pending TL Check'
+                  )}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

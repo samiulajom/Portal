@@ -90,7 +90,7 @@ interface PortalContextType {
   addUpdate: (entry: Omit<UpdateEntry, 'id'>) => void;
   updateUpdate: (id: string, updated: Partial<UpdateEntry>) => void;
   deleteUpdate: (id: string) => void;
-  toggleTlCheck: (id: string) => void;
+  toggleTlCheck: (id: string) => boolean;
   
   stations: StationGroup[];
   addStation: (name: string, shift: StationGroup['shift'], dutyContact?: StationMember) => void;
@@ -721,10 +721,30 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setUpdates(prev => prev.filter(u => u.id !== id));
   };
 
-  const toggleTlCheck = (id: string) => {
+  const toggleTlCheck = (id: string): boolean => {
+    // Role & Permission enforcement: Only Admin and Team Leader (or explicit approve_updates permission)
+    const canApprove = hasPermission('approve_updates') || currentUser.roleId === 'admin' || currentUser.roleId === 'team_leader';
+    if (!canApprove) {
+      return false;
+    }
+
+    const now = new Date();
+    const timeStr = `${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${currentUser?.name ? currentUser.name.split(' ')[0] : 'TL'})`;
+
     setUpdates(prev =>
-      prev.map(u => (u.id === id ? { ...u, tlCheck: !u.tlCheck } : u))
+      prev.map(u => {
+        if (u.id === id) {
+          const nextCheck = !u.tlCheck;
+          return {
+            ...u,
+            tlCheck: nextCheck,
+            tlAt: nextCheck ? timeStr : '—'
+          };
+        }
+        return u;
+      })
     );
+    return true;
   };
 
   // Stations handlers

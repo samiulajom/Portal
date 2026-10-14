@@ -8,6 +8,8 @@ interface MessageDetailsModalProps {
   onClose: () => void;
   onMarkAsSent?: (id: string) => void;
   onReopen?: (id: string) => void;
+  onToggleTlCheck?: (id: string) => void;
+  canApproveUpdates?: boolean;
 }
 
 export const MessageDetailsModal: React.FC<MessageDetailsModalProps> = ({
@@ -15,7 +17,9 @@ export const MessageDetailsModal: React.FC<MessageDetailsModalProps> = ({
   isOpen,
   onClose,
   onMarkAsSent,
-  onReopen
+  onReopen,
+  onToggleTlCheck,
+  canApproveUpdates = false
 }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -128,9 +132,25 @@ export const MessageDetailsModal: React.FC<MessageDetailsModalProps> = ({
             <span className="text-[10px] font-semibold text-[#8592a6] tracking-wider uppercase block">
               TL CHECK
             </span>
-            <span className="font-mono text-xs text-white block">
-              {entry.tlAt.replace('@', '') || (entry.tlCheck ? 'Verified' : 'Pending')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`font-mono text-xs block ${entry.tlCheck ? 'text-emerald-400 font-semibold' : 'text-neutral-300'}`}>
+                {entry.tlAt.replace('@', '') || (entry.tlCheck ? 'Verified' : 'Pending')}
+              </span>
+              {canApproveUpdates && onToggleTlCheck && (
+                <button
+                  type="button"
+                  onClick={() => onToggleTlCheck(entry.id)}
+                  className={`text-[10px] px-2 py-0.5 rounded font-medium border transition-colors cursor-pointer ${
+                    entry.tlCheck 
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' 
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                  }`}
+                  title={entry.tlCheck ? 'Click to revoke TL verification' : 'Click to verify as TL / Admin'}
+                >
+                  {entry.tlCheck ? 'Revoke TL' : 'Verify as TL'}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Row 2, Col 3: MESSAGE SENT TO */}

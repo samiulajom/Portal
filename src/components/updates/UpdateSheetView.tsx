@@ -9,7 +9,10 @@ import {
   Search, 
   Trash2, 
   CheckCircle2, 
-  RotateCcw 
+  RotateCcw,
+  Lock,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { usePortal } from '../../context/PortalContext';
 import { UpdateEntry } from '../../types';
@@ -18,7 +21,23 @@ import { EditUpdateEntryView } from './EditUpdateEntryView';
 import { MessageDetailsModal } from './MessageDetailsModal';
 
 export const UpdateSheetView: React.FC = () => {
-  const { updates, addUpdate, updateUpdate, deleteUpdate, toggleTlCheck, updateProfileFilter, setUpdateProfileFilter, user } = usePortal();
+  const { 
+    updates, 
+    addUpdate, 
+    updateUpdate, 
+    deleteUpdate, 
+    toggleTlCheck, 
+    updateProfileFilter, 
+    setUpdateProfileFilter, 
+    user,
+    currentUser,
+    currentRole,
+    hasPermission,
+    isAdmin
+  } = usePortal();
+
+  // Role verification: Only Admin and Team Leader (or explicit approve_updates permission) can toggle TL Check
+  const canApproveUpdates = hasPermission('approve_updates') || currentUser.roleId === 'admin' || currentUser.roleId === 'team_leader';
 
   // Tab State: 'active' (Unsent/Pending), 'completed' (Sent/Done), 'all' (Everything)
   const [viewTab, setViewTab] = useState<'active' | 'completed' | 'all'>('active');
@@ -184,7 +203,8 @@ export const UpdateSheetView: React.FC = () => {
             setToastMessage('✓ Update entry deleted successfully.');
           }}
           availableProfiles={uniqueProfiles}
-          currentUser={user?.name || 'Sales'}
+          currentUser={currentUser?.name || user?.name || 'Sales'}
+          canApproveUpdates={canApproveUpdates}
         />
       </div>
     );
@@ -245,6 +265,34 @@ export const UpdateSheetView: React.FC = () => {
             <Plus className="w-4 h-4 text-black" />
             <span>Add Entry</span>
           </button>
+        </div>
+      </div>
+
+      {/* TL Check Role Authorization Status Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[#0c1017] border border-[#1b2333] text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className={`p-1.5 rounded-lg shrink-0 ${
+            canApproveUpdates 
+              ? 'bg-purple-500/10 text-purple-400 border border-purple-500/25' 
+              : 'bg-slate-500/10 text-slate-400 border border-slate-500/25'
+          }`}>
+            {canApproveUpdates ? <ShieldCheck className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+          </span>
+          <div>
+            <span className="font-semibold text-white block sm:inline mr-2">
+              {canApproveUpdates ? 'TL Verification Authorized' : 'TL Check Restricted (Admin & TL Only)'}
+            </span>
+            <span className="text-[11px] text-[#94a3b8]">
+              {canApproveUpdates
+                ? `Logged in as ${currentUser.name} (${currentRole.name}). You are permitted to verify and approve TL checkmarks.`
+                : `Only Admin and Team Leader (TL) can check mark entries. Current role: ${currentRole.name}.`}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase border ${currentRole.badgeColor} ${currentRole.badgeBg}`}>
+            {currentRole.name}
+          </span>
         </div>
       </div>
 
@@ -507,17 +555,51 @@ export const UpdateSheetView: React.FC = () => {
 
                       {/* TL Check */}
                       <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                        <button
-                          onClick={() => toggleTlCheck(item.id)}
-                          className={`w-4 h-4 rounded inline-flex items-center justify-center transition-colors cursor-pointer ${
-                            item.tlCheck
-                              ? 'bg-emerald-600 text-white'
-                              : 'border border-[#384357] bg-[#141822] hover:border-neutral-400'
-                          }`}
-                          title={item.tlCheck ? 'TL Verified (Click to uncheck)' : 'Click to TL check'}
-                        >
-                          {item.tlCheck && <Check className="w-3 h-3 stroke-[3]" />}
-                        </button>
+                        {canApproveUpdates ? (
+                          <button
+                            onClick={() => {
+                              const success = toggleTlCheck(item.id);
+                              if (success) {
+                                setToastMessage(
+                                  item.tlCheck 
+                                    ? `✓ TL Check revoked for "${item.clientName}".` 
+                                    : `✓ Verified as TL by ${currentUser?.name ? currentUser.name.split(' ')[0] : 'TL'}.`
+                                );
+                              }
+                            }}
+                            className={`w-4 h-4 rounded inline-flex items-center justify-center transition-all cursor-pointer ${
+                              item.tlCheck
+                                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs'
+                                : 'border border-[#384357] bg-[#141822] hover:border-emerald-500/70 hover:bg-[#1a2130]'
+                            }`}
+                            title={
+                              item.tlCheck 
+                                ? `TL Verified (${item.tlAt || 'Checked'}). Click to revoke.` 
+                                : `Click to approve as ${currentRole.name}`
+                            }
+                          >
+                            {item.tlCheck && <Check className="w-3 h-3 stroke-[3]" />}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setToastMessage(`🔒 Access Restricted: Only Admin and Team Leader (TL) can check mark this. Current role: ${currentRole.name}`);
+                            }}
+                            className={`w-4 h-4 rounded inline-flex items-center justify-center transition-colors cursor-not-allowed group/tl ${
+                              item.tlCheck
+                                ? 'bg-emerald-700/60 text-emerald-200 border border-emerald-600/40'
+                                : 'border border-[#283244] bg-[#0d1017] opacity-60 hover:border-red-500/50'
+                            }`}
+                            title={`Restricted: Only Admin & Team Leader can toggle TL Check. Current role: ${currentRole.name}`}
+                          >
+                            {item.tlCheck ? (
+                              <Check className="w-3 h-3 stroke-[3]" />
+                            ) : (
+                              <Lock className="w-2.5 h-2.5 text-[#64748b] group-hover/tl:text-red-400 transition-colors" />
+                            )}
+                          </button>
+                        )}
                       </td>
 
                       {/* TL At */}
@@ -595,6 +677,13 @@ export const UpdateSheetView: React.FC = () => {
         onClose={() => setActiveMessageModal(null)}
         onMarkAsSent={handleMarkAsSent}
         onReopen={handleReopen}
+        onToggleTlCheck={canApproveUpdates ? (id) => {
+          const success = toggleTlCheck(id);
+          if (success) {
+            setToastMessage('✓ TL Verification status updated.');
+          }
+        } : undefined}
+        canApproveUpdates={canApproveUpdates}
       />
     </div>
   );
