@@ -169,10 +169,10 @@ const STORAGE_KEYS = {
   HANDOVERS: 'scaleup_portal_handovers',
   USER: 'scaleup_portal_user',
   MEMBER_POOL: 'scaleup_portal_member_pool_v1',
-  ROLES: 'scaleup_portal_roles_v2',
-  USERS: 'scaleup_portal_users_v2',
-  ACTIVE_USER_ID: 'scaleup_portal_active_user_id_v2',
-  ACCESS_LOGS: 'scaleup_portal_access_logs_v2'
+  ROLES: 'scaleup_portal_roles_v4',
+  USERS: 'scaleup_portal_users_v4',
+  ACTIVE_USER_ID: 'scaleup_portal_active_user_id_v4',
+  ACCESS_LOGS: 'scaleup_portal_access_logs_v4'
 };
 
 export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -189,7 +189,30 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Ensure all standard initialRoles are present
+          const existingIds = new Set(parsed.map((r: RoleDefinition) => r.id));
+          const merged = parsed.map((r: RoleDefinition) => {
+            const initRole = initialRoles.find(i => i.id === r.id);
+            return {
+              ...r,
+              name: initRole?.name || r.name,
+              badgeColor: initRole?.badgeColor || r.badgeColor,
+              badgeBg: initRole?.badgeBg || r.badgeBg,
+              permissions: {
+                ...(initRole ? initRole.permissions : {}),
+                ...r.permissions
+              }
+            };
+          });
+          // Add any missing initial standard roles
+          initialRoles.forEach(ir => {
+            if (!existingIds.has(ir.id)) {
+              merged.push(ir);
+            }
+          });
+          return merged;
+        }
       } catch (e) { /* ignore */ }
     }
     return initialRoles;
@@ -200,7 +223,16 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Map legacy role IDs if any
+          return parsed.map((u: PortalUser) => {
+            let roleId = u.roleId;
+            if (roleId === 'employee') roleId = 'operation_member';
+            if (roleId === 'sales_person') roleId = 'sells_member';
+            if (roleId === 'post_sales' || roleId === 'qa_auditor' || roleId === 'client_viewer') roleId = 'operation_member';
+            return { ...u, roleId };
+          });
+        }
       } catch (e) { /* ignore */ }
     }
     return initialUsers;
@@ -532,7 +564,7 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deleteCustomRole = (roleId: string) => {
     const role = roles.find(r => r.id === roleId);
     if (role?.isSystem) return;
-    setUsers(prev => prev.map(u => u.roleId === roleId ? { ...u, roleId: 'employee' } : u));
+    setUsers(prev => prev.map(u => u.roleId === roleId ? { ...u, roleId: 'operation_member' } : u));
     setRoles(prev => prev.filter(r => r.id !== roleId));
     addAccessLog({
       actorName: currentUser.name,

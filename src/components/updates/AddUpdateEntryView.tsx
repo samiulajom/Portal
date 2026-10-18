@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Check, ChevronDown, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, Lightbulb, Lock } from 'lucide-react';
 import { UpdateEntry } from '../../types';
 
 interface AddUpdateEntryViewProps {
@@ -7,6 +7,8 @@ interface AddUpdateEntryViewProps {
   onSave: (entry: Omit<UpdateEntry, 'id'>) => void;
   availableProfiles?: string[];
   currentUser?: string;
+  canEditOperationComment?: boolean;
+  canEditSalesComment?: boolean;
 }
 
 const DEFAULT_KNOWN_PROFILES = [
@@ -24,7 +26,9 @@ export const AddUpdateEntryView: React.FC<AddUpdateEntryViewProps> = ({
   onBack,
   onSave,
   availableProfiles = [],
-  currentUser = 'Samiul'
+  currentUser = 'Samiul',
+  canEditOperationComment = true,
+  canEditSalesComment = true
 }) => {
   const [profile, setProfile] = useState('');
   const [clientName, setClientName] = useState('');
@@ -176,28 +180,52 @@ export const AddUpdateEntryView: React.FC<AddUpdateEntryViewProps> = ({
         {/* ROW 3: Comment from Operation, Comment from Sales */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-300 block">
-              Comment from Operation
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-neutral-300 block">
+                Comment from Operation
+              </label>
+              {!canEditOperationComment && (
+                <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5" /> Restricted (Operations)
+                </span>
+              )}
+            </div>
             <input
               type="text"
+              disabled={!canEditOperationComment}
               value={commentOperation}
               onChange={e => setCommentOperation(e.target.value)}
-              placeholder="e.g. 15 Days Ex ..., Delivery A ..."
-              className="w-full px-3.5 py-2.5 bg-[#0b0e14] border border-[#1e2533] focus:border-amber-500/70 rounded-xl text-white placeholder:text-[#475569] text-xs focus:outline-none transition-colors"
+              placeholder={canEditOperationComment ? "e.g. 15 Days Ex ..., Delivery A ..." : "Restricted: Operations team only"}
+              className={`w-full px-3.5 py-2.5 rounded-xl text-xs focus:outline-none transition-colors ${
+                canEditOperationComment
+                  ? 'bg-[#0b0e14] border border-[#1e2533] focus:border-amber-500/70 text-white placeholder:text-[#475569]'
+                  : 'bg-[#080b10] border border-[#171c26] text-[#64748b] cursor-not-allowed placeholder:text-[#384357]'
+              }`}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-neutral-300 block">
-              Comment from Sales
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-neutral-300 block">
+                Comment from Sales
+              </label>
+              {!canEditSalesComment && (
+                <span className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
+                  <Lock className="w-2.5 h-2.5" /> Restricted (Sales)
+                </span>
+              )}
+            </div>
             <input
               type="text"
+              disabled={!canEditSalesComment}
               value={commentSales}
               onChange={e => setCommentSales(e.target.value)}
-              placeholder="Sales note, revision request details or notes"
-              className="w-full px-3.5 py-2.5 bg-[#0b0e14] border border-[#1e2533] focus:border-amber-500/70 rounded-xl text-white placeholder:text-[#475569] text-xs focus:outline-none transition-colors"
+              placeholder={canEditSalesComment ? "Sales note, revision request details or notes" : "Restricted: Sales team only"}
+              className={`w-full px-3.5 py-2.5 rounded-xl text-xs focus:outline-none transition-colors ${
+                canEditSalesComment
+                  ? 'bg-[#0b0e14] border border-[#1e2533] focus:border-amber-500/70 text-white placeholder:text-[#475569]'
+                  : 'bg-[#080b10] border border-[#171c26] text-[#64748b] cursor-not-allowed placeholder:text-[#384357]'
+              }`}
             />
           </div>
         </div>

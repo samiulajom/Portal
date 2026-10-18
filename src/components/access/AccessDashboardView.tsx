@@ -81,12 +81,20 @@ const PERMISSION_CATEGORIES: PermissionCategory[] = [
     ]
   },
   {
-    title: 'Updates & Quality Control',
-    description: 'Creating, editing, and verifying client update sheet entries',
+    title: 'Update Sheet Granular Features (আপডেট শিট ফিচারভিত্তিক এক্সেস)',
+    description: 'Fine-grained permissions for every single feature inside the Update Sheet module',
     permissions: [
-      { key: 'create_updates', label: 'Add Updates', description: 'Submit new update entries to the live sheet' },
-      { key: 'edit_updates', label: 'Edit Existing Updates', description: 'Modify remarks, messages, or assignees' },
-      { key: 'approve_updates', label: 'TL Check & Verification (Admin & TL Only)', description: 'Mark Team Leader checkmark & approve entries. Restricted to Admin & Team Leader by default.' }
+      { key: 'create_updates', label: 'Add Updates (নতুন এন্ট্রি যোগ)', description: 'Access Add Entry form and submit new client update entries' },
+      { key: 'edit_updates', label: 'Edit Existing Updates (এন্ট্রি এডিট)', description: 'Modify remarks, message content, profile, or assignees' },
+      { key: 'delete_updates', label: 'Delete Update Entries (এন্ট্রি ডিলিট)', description: 'Permanently remove update entries from the live sheet', isDestructive: true },
+      { key: 'approve_updates', label: 'TL Check & Verification (টিএল ভেরিফিকেশন)', description: 'Mark Team Leader checkmark. Restricted to Admin & TL by default.' },
+      { key: 'send_updates', label: 'Mark as Sent / Complete (সেন্ড ও কমপ্লিট)', description: 'Send message to client and archive entry into the Done/Completed list' },
+      { key: 'reopen_updates', label: 'Restore / Reopen Entry (ডান থেকে রিস্টোর)', description: 'Restore archived entries from Done list back into Active/Pending list' },
+      { key: 'export_updates', label: 'Export Update Sheet (সিএসভি এক্সপোর্ট)', description: 'Download CSV spreadsheet export of filtered update entries' },
+      { key: 'view_completed_updates', label: 'View Done / Completed Tab (কমপ্লিটেড ট্যাব)', description: 'Inspect sent/archived client message history in the Done tab' },
+      { key: 'view_message_details', label: 'View Message Details Modal (মেসেজ মডাল ও কপি)', description: 'Open full message modal dialog and copy message text to clipboard' },
+      { key: 'edit_operation_comment', label: 'Edit Comment - Operation (অপারেশন কমেন্ট)', description: 'Write or modify operational notes (delivery days, status)' },
+      { key: 'edit_sales_comment', label: 'Edit Comment - Sales (সেলস কমেন্ট)', description: 'Write or modify sales instructions and client revision notes' }
     ]
   },
   {
@@ -151,16 +159,35 @@ export const AccessDashboardView: React.FC = () => {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isNewRoleModalOpen, setIsNewRoleModalOpen] = useState(false);
   const [editingUserDetails, setEditingUserDetails] = useState<PortalUser | null>(null);
+  const [editingUserEditForm, setEditingUserEditForm] = useState<{
+    name: string;
+    email: string;
+    roleId: string;
+    department: string;
+    shift: string;
+    phoneWhatsapp: string;
+    status: 'Active' | 'Inactive' | 'On Leave';
+  }>({
+    name: '',
+    email: '',
+    roleId: 'operation_member',
+    department: 'Operations',
+    shift: 'Morning Shift',
+    phoneWhatsapp: '',
+    status: 'Active'
+  });
 
   // New user form state
   const [newUserForm, setNewUserForm] = useState({
     name: '',
     email: '',
-    roleId: 'employee',
+    roleId: 'operation_member',
     department: 'Operations',
     shift: 'Morning Shift',
     phoneWhatsapp: '+8801'
   });
+  const [newUserUseCustomPermissions, setNewUserUseCustomPermissions] = useState(false);
+  const [newUserCustomPerms, setNewUserCustomPerms] = useState<Partial<Record<PermissionKey, boolean>>>({});
 
   // New custom role form state
   const [newRoleForm, setNewRoleForm] = useState({
@@ -206,6 +233,78 @@ export const AccessDashboardView: React.FC = () => {
     setCustomPermsDraft(initialPerms);
   };
 
+  // Open modal to add a new team member
+  const handleOpenAddUserModal = () => {
+    const defaultRoleId = 'operation_member';
+    const roleDef = roles.find(r => r.id === defaultRoleId) || roles[0];
+    setNewUserForm({
+      name: '',
+      email: '',
+      roleId: defaultRoleId,
+      department: 'Operations',
+      shift: 'Morning Shift',
+      phoneWhatsapp: '+8801'
+    });
+    setNewUserUseCustomPermissions(false);
+    setNewUserCustomPerms(roleDef ? { ...roleDef.permissions } : {});
+    setIsAddUserModalOpen(true);
+  };
+
+  // When changing role in Add Member, auto-suggest department and auto-seed permissions
+  const handleRoleSelectInAddUser = (newRoleId: string) => {
+    let suggestedDept = newUserForm.department;
+    if (newRoleId === 'admin' || newRoleId === 'gm') {
+      suggestedDept = 'Management';
+    } else if (newRoleId === 'sales_manager' || newRoleId === 'sells_member') {
+      suggestedDept = 'Sales';
+    } else if (newRoleId === 'operation_manager' || newRoleId === 'team_leader' || newRoleId === 'operation_member') {
+      suggestedDept = 'Operations';
+    }
+
+    setNewUserForm(prev => ({
+      ...prev,
+      roleId: newRoleId,
+      department: suggestedDept
+    }));
+
+    const roleDef = roles.find(r => r.id === newRoleId);
+    if (roleDef) {
+      setNewUserCustomPerms({ ...roleDef.permissions });
+    }
+  };
+
+  // Open modal to edit existing member details & role
+  const handleOpenEditUserModal = (targetUser: PortalUser) => {
+    setEditingUserDetails(targetUser);
+    setEditingUserEditForm({
+      name: targetUser.name,
+      email: targetUser.email,
+      roleId: targetUser.roleId,
+      department: targetUser.department,
+      shift: targetUser.shift,
+      phoneWhatsapp: targetUser.phoneWhatsapp || '',
+      status: targetUser.status
+    });
+  };
+
+  // Save edited member details
+  const handleSaveEditUserSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUserDetails || !editingUserEditForm.name.trim() || !editingUserEditForm.email.trim()) return;
+
+    updateUser(editingUserDetails.id, {
+      name: editingUserEditForm.name.trim(),
+      email: editingUserEditForm.email.trim(),
+      roleId: editingUserEditForm.roleId,
+      department: editingUserEditForm.department,
+      shift: editingUserEditForm.shift,
+      phoneWhatsapp: editingUserEditForm.phoneWhatsapp.trim(),
+      status: editingUserEditForm.status
+    });
+
+    setEditingUserDetails(null);
+  };
+
   // Save person-specific permissions
   const handleSaveUserPermissions = () => {
     if (!editingUserPermissions) return;
@@ -245,18 +344,20 @@ export const AccessDashboardView: React.FC = () => {
       isClockedIn: false,
       clockInTime: '--:--',
       status: 'Active',
-      useCustomPermissions: false
+      useCustomPermissions: newUserUseCustomPermissions,
+      customPermissions: newUserUseCustomPermissions ? newUserCustomPerms : undefined
     });
 
     setIsAddUserModalOpen(false);
     setNewUserForm({
       name: '',
       email: '',
-      roleId: 'employee',
+      roleId: 'operation_member',
       department: 'Operations',
       shift: 'Morning Shift',
       phoneWhatsapp: '+8801'
     });
+    setNewUserUseCustomPermissions(false);
   };
 
   // Handle adding a custom role
@@ -264,8 +365,8 @@ export const AccessDashboardView: React.FC = () => {
     e.preventDefault();
     if (!newRoleForm.name.trim()) return;
 
-    // Start with basic employee permissions
-    const baseEmp = roles.find(r => r.id === 'employee') || roles[0];
+    // Start with basic operation member permissions
+    const baseEmp = roles.find(r => r.id === 'operation_member') || roles[0];
     addCustomRole({
       name: newRoleForm.name.trim(),
       description: newRoleForm.description.trim() || 'Custom department role',
@@ -349,7 +450,7 @@ export const AccessDashboardView: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsAddUserModalOpen(true)}
+              onClick={handleOpenAddUserModal}
               className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
@@ -637,6 +738,16 @@ export const AccessDashboardView: React.FC = () => {
                               >
                                 <Key className="w-3 h-3 text-amber-400" />
                                 <span>Configure Access</span>
+                              </button>
+
+                              {/* Edit Profile & Role Button */}
+                              <button
+                                onClick={() => handleOpenEditUserModal(u)}
+                                className="px-2.5 py-1 rounded-lg bg-[#141b27] hover:bg-sky-500/20 text-[#cbd5e1] hover:text-sky-300 border border-[#212b3d] hover:border-sky-500/40 text-[11px] font-medium transition-all flex items-center gap-1 cursor-pointer"
+                                title="Edit user profile details and role"
+                              >
+                                <Edit3 className="w-3 h-3 text-sky-400" />
+                                <span>Edit</span>
                               </button>
 
                               {/* Simulate / Switch User */}
@@ -936,11 +1047,19 @@ export const AccessDashboardView: React.FC = () => {
                 {[
                   { key: 'create_queue', label: 'Can Create Queue Items' },
                   { key: 'process_queue', label: 'Can Give Post-Sales Update' },
+                  { key: 'create_updates', label: 'Can Add Update Entries' },
+                  { key: 'edit_updates', label: 'Can Edit Update Entries' },
+                  { key: 'delete_updates', label: 'Can Delete Update Entries' },
                   { key: 'approve_updates', label: 'Can Perform TL Check' },
+                  { key: 'send_updates', label: 'Can Mark as Sent (Done)' },
+                  { key: 'reopen_updates', label: 'Can Reopen Archived Updates' },
+                  { key: 'export_updates', label: 'Can Export Sheet CSV' },
+                  { key: 'view_completed_updates', label: 'Can View Done Tab' },
+                  { key: 'view_message_details', label: 'Can View Message Details' },
                   { key: 'manage_stations', label: 'Can Manage Shift Stations' },
                   { key: 'resolve_complains', label: 'Can Resolve Complaints' },
                   { key: 'manage_stores', label: 'Can Edit Store Matrix' },
-                  { key: 'export_data', label: 'Can Export CSV / Reports' },
+                  { key: 'export_data', label: 'Can Export System Reports' },
                   { key: 'delete_records', label: 'Can Delete Records' }
                 ].map(act => {
                   const allowed = hasPermission(act.key as PermissionKey, simulatorUser);
@@ -1169,21 +1288,374 @@ export const AccessDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 2: ADD NEW TEAM MEMBER */}
-      {isAddUserModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-xs">
-          <form onSubmit={handleCreateUserSubmit} className="bg-[#0b0e14] border border-[#212b3c] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150">
+      {/* MODAL 2: ADD NEW TEAM MEMBER (WITH ROLE AUTO-ACCESS & OPTIONAL CUSTOM OVERRIDES) */}
+      {isAddUserModalOpen && (() => {
+        const selectedAddRole = roles.find(r => r.id === newUserForm.roleId) || roles[0];
+        const autoGrantedCount = Object.values(selectedAddRole.permissions).filter(Boolean).length;
+        const totalPermsCount = Object.keys(selectedAddRole.permissions).length;
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs">
+            <form 
+              onSubmit={handleCreateUserSubmit} 
+              className="bg-[#0b0e14] border border-[#212b3c] rounded-2xl w-full max-w-xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150"
+            >
+              {/* Modal Header */}
+              <div className="p-5 border-b border-[#1c2433] flex items-center justify-between bg-[#0e131d] shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <UserPlus className="w-5 h-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-white text-sm">Add New Team Member</h3>
+                    <p className="text-[11px] text-[#94a3b8]">Select a role to automatically assign all access permissions</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddUserModalOpen(false)}
+                  className="p-1 rounded-lg text-[#64748b] hover:text-white cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+                {/* Basic Info: Name & Email */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">
+                      Full Name <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Md. Samiul Ajom"
+                      value={newUserForm.name}
+                      onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
+                      className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden focus:border-amber-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">
+                      Work Email <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="samiul@scaleup.com"
+                      value={newUserForm.email}
+                      onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                      className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden focus:border-amber-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* ROLE SELECTION & AUTO-ACCESS CARD */}
+                <div className="p-4 rounded-xl bg-[#0f1420] border border-[#223049] space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-white flex items-center gap-1.5">
+                        <Shield className="w-4 h-4 text-amber-400" />
+                        <span>Portal Role (রোল নির্বাচন করুন)</span>
+                      </label>
+                      <p className="text-[11px] text-[#94a3b8]">
+                        Choose from the 7 standard portal roles to auto-assign all permissions
+                      </p>
+                    </div>
+
+                    <span className={`self-start sm:self-auto text-xs px-2.5 py-1 rounded-md font-semibold border ${selectedAddRole.badgeColor} ${selectedAddRole.badgeBg}`}>
+                      {selectedAddRole.name}
+                    </span>
+                  </div>
+
+                  {/* Role Dropdown */}
+                  <select
+                    value={newUserForm.roleId}
+                    onChange={e => handleRoleSelectInAddUser(e.target.value)}
+                    className="w-full bg-[#131a29] border border-[#283852] rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-hidden focus:border-amber-500/70 font-semibold cursor-pointer shadow-inner"
+                  >
+                    {roles.map(r => (
+                      <option key={r.id} value={r.id} className="bg-[#0b0e14] py-1">
+                        {r.name} — ({r.description.slice(0, 55)}...)
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Auto-Inherited Permissions Summary Banner */}
+                  <div className="p-3 rounded-lg bg-[#0b0f17] border border-[#1e293c] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>Auto-Inherited Access Active ({autoGrantedCount}/{totalPermsCount} Allowed)</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-[#64748b]">Zero Manual Setup Needed</span>
+                    </div>
+
+                    <p className="text-[11px] text-[#94a3b8] leading-relaxed">
+                      {selectedAddRole.description}
+                    </p>
+
+                    {/* Quick Access Badges for this Role */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+                      <span className="text-[#64748b]">Key features:</span>
+                      {selectedAddRole.permissions.overview_view_kpi && (
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                          Overview KPI
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.overview_view_operations_wip && (
+                        <span className="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 border border-teal-500/20">
+                          Operations WIP Matrix
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.overview_view_sales_updates && (
+                        <span className="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                          Sales Updates
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.approve_updates ? (
+                        <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold">
+                          TL Check: Allowed ✓
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">
+                          TL Check: Restricted ✕
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.view_updates && (
+                        <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                          Update Sheet
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.view_issues && (
+                        <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                          Issue Sheet
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.view_queue && (
+                        <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                          Queue
+                        </span>
+                      )}
+                      {selectedAddRole.permissions.view_stations && (
+                        <span className="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                          Stations
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-[11px] text-[#38bdf8] bg-sky-500/10 border border-sky-500/20 rounded-md p-2 flex items-center gap-2 mt-1">
+                      <Info className="w-3.5 h-3.5 shrink-0 text-sky-400" />
+                      <span>
+                        এই রোলটি সিলেক্ট করায় মেম্বার স্বয়ংক্রিয়ভাবে সংশ্লিষ্ট সব ফিচার ও ওভারভিউয়ের অ্যাক্সেস পেয়ে যাবে।
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* INDIVIDUAL CUSTOM PERMISSIONS OVERRIDE TOGGLE */}
+                <div className="p-4 rounded-xl bg-[#0f141f] border border-[#1e2738] space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <Sliders className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-bold text-white">
+                          Customize Individual Permissions (ঐচ্ছিক আলাদা কনফিগারেশন)
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#94a3b8]">
+                        Keep OFF to automatically inherit role access. Turn ON only to override specific permissions for this person.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextVal = !newUserUseCustomPermissions;
+                        setNewUserUseCustomPermissions(nextVal);
+                        if (nextVal) {
+                          const roleDef = roles.find(r => r.id === newUserForm.roleId) || roles[0];
+                          setNewUserCustomPerms({ ...roleDef.permissions });
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                        newUserUseCustomPermissions ? 'bg-amber-500' : 'bg-[#242f42]'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                          newUserUseCustomPermissions ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Expandable Granular Permission Checkboxes */}
+                  {newUserUseCustomPermissions && (
+                    <div className="pt-3 border-t border-[#1e293b] space-y-3 animate-in fade-in duration-150">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-amber-300">
+                          Individual Overrides Active for this Person
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const roleDef = roles.find(r => r.id === newUserForm.roleId) || roles[0];
+                              setNewUserCustomPerms({ ...roleDef.permissions });
+                            }}
+                            className="px-2 py-0.5 rounded bg-[#182030] hover:bg-[#202b40] text-[10px] font-medium text-[#cbd5e1] border border-[#2b3952] cursor-pointer"
+                          >
+                            Reset to {selectedAddRole.name} Defaults
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                        {PERMISSION_CATEGORIES.map(category => (
+                          <div key={category.title} className="p-2.5 rounded-lg bg-[#090d14] border border-[#1b2333] space-y-2">
+                            <h4 className="text-[11px] font-bold text-white flex items-center justify-between">
+                              <span>{category.title}</span>
+                              <span className="text-[10px] font-mono text-[#64748b]">
+                                {category.permissions.filter(p => newUserCustomPerms[p.key]).length}/{category.permissions.length}
+                              </span>
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {category.permissions.map(perm => {
+                                const isChecked = Boolean(newUserCustomPerms[perm.key]);
+                                return (
+                                  <label
+                                    key={perm.key}
+                                    className={`flex items-start gap-2 p-1.5 rounded-md border text-[11px] cursor-pointer transition-colors ${
+                                      isChecked 
+                                        ? 'bg-amber-500/10 border-amber-500/30 text-white' 
+                                        : 'bg-[#10141d] border-[#1c2434] text-[#94a3b8]'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={e => {
+                                        setNewUserCustomPerms(prev => ({
+                                          ...prev,
+                                          [perm.key]: e.target.checked
+                                        }));
+                                      }}
+                                      className="mt-0.5 rounded border-[#2a364a] text-amber-500 focus:ring-0"
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="font-semibold leading-tight">{perm.label}</p>
+                                      <p className="text-[10px] text-[#64748b] leading-tight truncate">{perm.description}</p>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Secondary Info: Department, Shift, Phone */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Department</label>
+                    <select
+                      value={newUserForm.department}
+                      onChange={e => setNewUserForm({ ...newUserForm, department: e.target.value })}
+                      className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
+                    >
+                      <option value="Operations">Operations</option>
+                      <option value="Sales">Sales</option>
+                      <option value="Management">Management</option>
+                      <option value="Post-Sales">Post-Sales</option>
+                      <option value="Shopify Dev">Shopify Dev</option>
+                      <option value="Quality">Quality</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Assigned Shift</label>
+                    <select
+                      value={newUserForm.shift}
+                      onChange={e => setNewUserForm({ ...newUserForm, shift: e.target.value })}
+                      className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
+                    >
+                      <option value="Morning Shift">Morning Shift (07 AM - 03 PM)</option>
+                      <option value="Evening Shift">Evening Shift (03 PM - 11 PM)</option>
+                      <option value="Night Shift">Night Shift (11 PM - 07 AM)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Phone / WhatsApp</label>
+                    <input
+                      type="text"
+                      value={newUserForm.phoneWhatsapp}
+                      onChange={e => setNewUserForm({ ...newUserForm, phoneWhatsapp: e.target.value })}
+                      className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-[#1c2433] bg-[#0e131d] flex items-center justify-between gap-2 shrink-0">
+                <div className="text-[11px] text-[#64748b]">
+                  {newUserUseCustomPermissions ? (
+                    <span className="text-amber-400 font-medium">Mode: Custom overrides active</span>
+                  ) : (
+                    <span className="text-emerald-400 font-medium">Mode: Auto-inherited {selectedAddRole.name} access</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddUserModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-medium text-[#94a3b8] hover:text-white cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    Create Member
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        );
+      })()}
+
+      {/* MODAL 3: EDIT EXISTING MEMBER PROFILE & ROLE */}
+      {editingUserDetails && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs">
+          <form 
+            onSubmit={handleSaveEditUserSubmit} 
+            className="bg-[#0b0e14] border border-[#212b3c] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-150"
+          >
             <div className="p-5 border-b border-[#1c2433] flex items-center justify-between bg-[#0e131d]">
               <div className="flex items-center gap-2.5">
-                <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  <UserPlus className="w-4 h-4" />
+                <span className="p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                  <Edit3 className="w-5 h-5" />
                 </span>
-                <h3 className="font-bold text-white text-sm">Add New Team Member</h3>
+                <div>
+                  <h3 className="font-bold text-white text-sm">Edit Member Details & Role</h3>
+                  <p className="text-[11px] text-[#94a3b8]">Modify user information or change their portal role</p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setIsAddUserModalOpen(false)}
-                className="p-1 rounded-lg text-[#64748b] hover:text-white"
+                onClick={() => setEditingUserDetails(null)}
+                className="p-1 rounded-lg text-[#64748b] hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1191,67 +1663,87 @@ export const AccessDashboardView: React.FC = () => {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#cbd5e1] mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Full Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Md. Samiul Ajom"
-                  value={newUserForm.name}
-                  onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
-                  className="w-full bg-[#121620] border border-[#1f2736] rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-amber-500/50"
+                  value={editingUserEditForm.name}
+                  onChange={e => setEditingUserEditForm({ ...editingUserEditForm, name: e.target.value })}
+                  className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden focus:border-sky-500/50"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#cbd5e1] mb-1">Work Email</label>
+                <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Work Email</label>
                 <input
                   type="email"
                   required
-                  placeholder="samiul@scaleup.com"
-                  value={newUserForm.email}
-                  onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
-                  className="w-full bg-[#121620] border border-[#1f2736] rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden focus:border-amber-500/50"
+                  value={editingUserEditForm.email}
+                  onChange={e => setEditingUserEditForm({ ...editingUserEditForm, email: e.target.value })}
+                  className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden focus:border-sky-500/50"
                 />
               </div>
 
+              {/* ROLE SELECTION */}
+              <div className="p-3.5 rounded-xl bg-[#0f1522] border border-[#1f2d42] space-y-2">
+                <label className="block text-xs font-bold text-white flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-sky-400" />
+                  <span>Portal Role (রোল পরিবর্তন করুন)</span>
+                </label>
+                <select
+                  value={editingUserEditForm.roleId}
+                  onChange={e => setEditingUserEditForm({ ...editingUserEditForm, roleId: e.target.value })}
+                  className="w-full bg-[#131b29] border border-[#23324a] rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-hidden focus:border-sky-500/60"
+                >
+                  {roles.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-[#94a3b8]">
+                  Changing the role immediately applies the new role baseline to this member.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-[#cbd5e1] mb-1">Role</label>
+                  <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Department</label>
                   <select
-                    value={newUserForm.roleId}
-                    onChange={e => setNewUserForm({ ...newUserForm, roleId: e.target.value })}
-                    className="w-full bg-[#121620] border border-[#1f2736] rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden"
+                    value={editingUserEditForm.department}
+                    onChange={e => setEditingUserEditForm({ ...editingUserEditForm, department: e.target.value })}
+                    className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
                   >
-                    {roles.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
+                    <option value="Operations">Operations</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Management">Management</option>
+                    <option value="Post-Sales">Post-Sales</option>
+                    <option value="Shopify Dev">Shopify Dev</option>
+                    <option value="Quality">Quality</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#cbd5e1] mb-1">Department</label>
+                  <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Status</label>
                   <select
-                    value={newUserForm.department}
-                    onChange={e => setNewUserForm({ ...newUserForm, department: e.target.value })}
-                    className="w-full bg-[#121620] border border-[#1f2736] rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden"
+                    value={editingUserEditForm.status}
+                    onChange={e => setEditingUserEditForm({ ...editingUserEditForm, status: e.target.value as any })}
+                    className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
                   >
-                    <option value="Sales">Sales</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Post-Sales">Post-Sales</option>
-                    <option value="Shopify Dev">Shopify Dev</option>
-                    <option value="Quality">Quality</option>
-                    <option value="Management">Management</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="On Leave">On Leave</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-[#cbd5e1] mb-1">Assigned Shift</label>
+                  <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Assigned Shift</label>
                   <select
-                    value={newUserForm.shift}
-                    onChange={e => setNewUserForm({ ...newUserForm, shift: e.target.value })}
-                    className="w-full bg-[#121620] border border-[#1f2736] rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden"
+                    value={editingUserEditForm.shift}
+                    onChange={e => setEditingUserEditForm({ ...editingUserEditForm, shift: e.target.value })}
+                    className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
                   >
                     <option value="Morning Shift">Morning Shift (07 AM - 03 PM)</option>
                     <option value="Evening Shift">Evening Shift (03 PM - 11 PM)</option>
@@ -1260,12 +1752,12 @@ export const AccessDashboardView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-[#cbd5e1] mb-1">Phone / WhatsApp</label>
+                  <label className="block text-xs font-semibold text-[#cbd5e1] mb-1">Phone / WhatsApp</label>
                   <input
                     type="text"
-                    value={newUserForm.phoneWhatsapp}
-                    onChange={e => setNewUserForm({ ...newUserForm, phoneWhatsapp: e.target.value })}
-                    className="w-full bg-[#121620] border border-[#1f2736] rounded-lg px-3 py-2 text-xs text-white focus:outline-hidden"
+                    value={editingUserEditForm.phoneWhatsapp}
+                    onChange={e => setEditingUserEditForm({ ...editingUserEditForm, phoneWhatsapp: e.target.value })}
+                    className="w-full bg-[#121620] border border-[#1f2736] rounded-xl px-3 py-2 text-xs text-white focus:outline-hidden"
                   />
                 </div>
               </div>
@@ -1274,16 +1766,16 @@ export const AccessDashboardView: React.FC = () => {
             <div className="p-4 border-t border-[#1c2433] bg-[#0e131d] flex items-center justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setIsAddUserModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-[#94a3b8] hover:text-white"
+                onClick={() => setEditingUserDetails(null)}
+                className="px-4 py-2 rounded-xl text-xs font-medium text-[#94a3b8] hover:text-white cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer"
+                className="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer"
               >
-                Create Member
+                Save Changes
               </button>
             </div>
           </form>
