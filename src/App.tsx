@@ -20,6 +20,7 @@ import { AccessRestrictedView } from './components/access/AccessRestrictedView';
 import { CommandPalette } from './components/modals/CommandPalette';
 import { AnnouncementsModal } from './components/modals/AnnouncementsModal';
 import { UserProfileModal } from './components/modals/UserProfileModal';
+import { AuthView } from './components/auth/AuthView';
 
 const PortalMain: React.FC = () => {
   const { activeTab, theme, canAccessTab } = usePortal();
@@ -78,10 +79,20 @@ const PortalMain: React.FC = () => {
   );
 };
 
+const PortalApp: React.FC = () => {
+  const { isAuthenticated } = usePortal();
+
+  if (!isAuthenticated) {
+    return <AuthView />;
+  }
+
+  return <PortalMain />;
+};
+
 export default function App() {
   return (
     <PortalProvider>
-      <PortalMain />
+      <PortalApp />
     </PortalProvider>
   );
 }
